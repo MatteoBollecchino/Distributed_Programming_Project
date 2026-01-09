@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FantaWorld - Fantasy & Fantascienza</title>
+
+    <!-- Font Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)),
+                url('https://www.thegamesmachine.it/wp-content/uploads/2024/09/Warhammer-40000-Space-Marine-2-recensione-apertura.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: white;
+        }
+
+        header {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+
+        header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0;
+            color: #f5c542;
+        }
+
+        nav a {
+            margin-left: 20px;
+            text-decoration: none;
+            color: #ffffff;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: #f5c542;
+        }
+
+        .hero {
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            font-family: 'Cinzel', serif;
+        }
+
+        .hero p {
+            max-width: 700px;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .hero button {
+            padding: 15px 30px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 30px;
+            background-color: #f5c542;
+            color: #000;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .hero button:hover {
+            background-color: #ffd966;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>FantaWorld</h1>
+        <nav>
+            <a href="#">Home</a>
+            <a href="#">Product Catalog</a>
+            <a href="#">Shopping Cart</a>
+            <a href="#">Account</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div style="
+            background: rgba(20, 20, 40, 0.8);
+            padding: 45px;
+            border-radius: 18px;
+            color: #fff;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+        ">
+        <h2>Welcome in FantaWorld</h2>
+        <p>
+            Your gateway to fantastic worlds and distant galaxies.
+            Discover epic books, legendary comics and mangas, and collectible items
+            for true fans of fantasy and science fiction.
+        </p>
+        <button>Register</button> &nbsp  or &nbsp  <button>Login</button>
+    </section>
+
+    {{template "footer.html"}}
+
+</body>
+</html>

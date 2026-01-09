@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FantaWorld - Fantasy & Sci-Fi</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* === Global Styles === */
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            color: #fff;
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
+                        url('https://images.unsplash.com/photo-1519681393784-d120267933ba');
+            background-size: cover;
+            background-position: center;
+        }
+
+        a {
+            text-decoration: none;
+            color: #fff;
+            transition: color 0.3s;
+        }
+
+        a:hover {
+            color: #f5c542;
+        }
+
+        /* === Header / Navbar === */
+        header {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            color: #f5c542;
+            margin: 0;
+        }
+
+        nav a {
+            margin-left: 20px;
+            font-weight: 500;
+        }
+
+        /* === Hero Section === */
+        .hero {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 100px 20px 60px 20px;
+        }
+
+        .hero h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            max-width: 700px;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .hero button {
+            padding: 15px 30px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 30px;
+            background-color: #f5c542;
+            color: #000;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .hero button:hover {
+            background-color: #ffd966;
+            transform: scale(1.05);
+        }
+
+        /* === Main Content === */
+        main {
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Example card */
+        .card {
+            background-color: rgba(0,0,0,0.7);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: #f5c542;
+        }
+
+        /* === Footer === */
+        footer {
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* === Responsive === */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            nav a {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+
+            .hero h2 {
+                font-size: 2.2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <header>
+        <h1>FantaWorld</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="books.html">Books</a>
+            <a href="manga.html">Manga</a>
+            <a href="collectibles.html">Collectibles</a>
+            <a href="contact.html">Contact</a>
+        </nav>
+    </header>
+
+    <!-- Hero Section (personalizzabile per ogni pagina) -->
+    <section class="hero">
+        <h2>Welcome to FantaWorld</h2>
+        <p>
+            Your gateway to fantastic worlds and distant galaxies.
+            Discover epic books, legendary manga, and collectible items
+            for true fans of fantasy and science fiction.
+        </p>
+        <button>Enter the World</button>
+    </section>
+
+    <!-- Main Content (unico per ogni pagina) -->
+    <main>
+        <!-- Esempio card -->
+        <div class="card">
+            <h3>Featured Book</h3>
+            <p>An epic tale of adventure across the stars.</p>
+        </div>
+
+        <div class="card">
+            <h3>Legendary Manga</h3>
+            <p>Discover rare manga editions for collectors.</p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        © 2026 FantaWorld – All Rights Reserved
+    </footer>
+
+</body>
+</html>
