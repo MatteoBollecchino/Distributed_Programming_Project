@@ -8,11 +8,14 @@ import (
 
 var templates = template.Must(template.ParseGlob("templates/*.html"))
 
-func welcomeHandler(writer http.ResponseWriter, request *http.Request) {
-	err := templates.ExecuteTemplate(writer, "welcome_page.html", nil)
+func checkerr(writer http.ResponseWriter, err error) {
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func welcomeHandler(writer http.ResponseWriter, request *http.Request) {
+	checkerr(writer, templates.ExecuteTemplate(writer, "welcome_page.html", nil))
 }
 
 func main() {
