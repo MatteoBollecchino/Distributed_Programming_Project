@@ -43,11 +43,21 @@ func accountHandler(writer http.ResponseWriter, request *http.Request) {
 	checkerr(writer, templates.ExecuteTemplate(writer, "account.html", nil))
 }
 
+func registerHandler(writer http.ResponseWriter, request *http.Request) {
+	checkerr(writer, templates.ExecuteTemplate(writer, "register.html", nil))
+}
+
+func loginHandler(writer http.ResponseWriter, request *http.Request) {
+	checkerr(writer, templates.ExecuteTemplate(writer, "login.html", nil))
+}
+
 func main() {
 	http.HandleFunc("/welcome", welcomeHandler)
 	http.HandleFunc("/product_catalog", productCatalogHandler)
 	http.HandleFunc("/shopping_cart", shoppingCartHandler)
 	http.HandleFunc("/account", accountHandler)
+	http.HandleFunc("/register", registerHandler)
+	http.HandleFunc("/login", loginHandler)
 
 	// starts the server on the port 8080 and nil means that the predefined router has to be used
 	log.Fatal(http.ListenAndServe(":8080", nil))

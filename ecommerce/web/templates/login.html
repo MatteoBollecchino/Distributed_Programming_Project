@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FantaWorld – Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Roboto', sans-serif;
+            background:
+                linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)),
+                url("https://images.unsplash.com/photo-1519681393784-d120267933ba");
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .login-box {
+            background-color: rgba(0,0,0,0.8);
+            padding: 45px;
+            border-radius: 18px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+            text-align: center;
+            margin: auto;
+        }
+
+        .login-box h1 {
+            font-family: 'Cinzel', serif;
+            text-align: center;
+            color: #f5c542;
+            margin-bottom: 10px;
+        }
+
+        .login-box p {
+            text-align: center;
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .login-box label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 18px;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+            font-size: 0.95rem;
+        }
+
+        .login-box input:focus {
+            box-shadow: 0 0 0 2px #f5c542;
+        }
+
+        .login-box button {
+            width: 100%;
+            padding: 14px;
+            background-color: #f5c542;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #000;
+        }
+
+        .login-box button:hover {
+            background-color: #ffd966;
+            transform: scale(1.03);
+        }
+
+        .login-box .links {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+
+        .login-box a {
+            color: #f5c542;
+            text-decoration: none;
+        }
+
+        .login-box a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-box">
+        <h1>FantaWorld</h1>
+        <p>Enter a world of fantasy and science fiction</p>
+
+        <form method="POST" action="/login">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    {{template "footer" .}}
+
+</body>
+</html>

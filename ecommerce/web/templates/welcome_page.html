@@ -1,65 +1,39 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FantaWorld - Fantasy & Fantascienza</title>
+{{template "header" .}}
+<style>
+    .hero {
+        height: 80vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 20px;
+    }
 
-    <!-- Font Google -->
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    .hero button {
+        padding: 15px 30px;
+        font-size: 1rem;
+        border: none;
+        border-radius: 30px;
+        background-color: #f5c542;
+        color: #000;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.2s;
+    }
 
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background:
-                linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)),
-                url('https://www.thegamesmachine.it/wp-content/uploads/2024/09/Warhammer-40000-Space-Marine-2-recensione-apertura.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            color: white;
-        }
-
-        .hero {
-            height: 80vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .hero button {
-            padding: 15px 30px;
-            font-size: 1rem;
-            border: none;
-            border-radius: 30px;
-            background-color: #f5c542;
-            color: #000;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
-        }
-
-        .hero button:hover {
-            background-color: #ffd966;
-            transform: scale(1.05);
-        }
-    </style>
-</head>
+    .hero button:hover {
+        background-color: #ffd966;
+        transform: scale(1.05);
+    }
+</style>
 
 <body>
 
-    {{template "header" .}}
-
     <section class="hero">
         {{template "home" .}}
-        <button>Register</button> &nbsp  or &nbsp  <button>Login</button>
+        <button><a href="/register">Register</a></button> &nbsp  or &nbsp  <button><a href="/login">Login</a></button>
     </section>
 
-    {{template "footer" .}}
-
 </body>
-</html>
+
+{{template "footer" .}}

@@ -1,103 +1,88 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FantaWorld – Shopping Cart</title>
+{{template "header" .}}
 
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+    /* ===== Page Title ===== */
+    .page-title {
+        text-align: center;
+        padding: 60px 20px 30px;
+    }
 
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Roboto', sans-serif;
-            color: #fff;
-            background:
-                linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
-                url('https://images.unsplash.com/photo-1519681393784-d120267933ba');
-            background-size: cover;
-            background-position: center;
-        }
+    .page-title h2 {
+        font-family: 'Cinzel', serif;
+        font-size: 2.8rem;
+        margin-bottom: 10px;
+    }
 
-        /* ===== Page Title ===== */
-        .page-title {
-            text-align: center;
-            padding: 60px 20px 30px;
-        }
+    .page-title p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
 
-        .page-title h2 {
-            font-family: 'Cinzel', serif;
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-        }
+    /* ===== Catalog Grid ===== */
+    .catalog {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+    }
 
-        .page-title p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
+    /* ===== Product Card ===== */
+    .product-card {
+        background-color: rgba(0,0,0,0.75);
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        transition: transform 0.3s;
+    }
 
-        /* ===== Catalog Grid ===== */
-        .catalog {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-        }
+    .product-card:hover {
+        transform: translateY(-8px);
+    }
 
-        /* ===== Product Card ===== */
-        .product-card {
-            background-color: rgba(0,0,0,0.75);
-            border-radius: 16px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            transition: transform 0.3s;
-        }
+    .product-card h3 {
+        color: #f5c542;
+        margin: 10px 0;
+    }
 
-        .product-card:hover {
-            transform: translateY(-8px);
-        }
+    .product-card p {
+        font-size: 0.95rem;
+        opacity: 0.9;
+    }
 
-        .product-card h3 {
-            color: #f5c542;
-            margin: 10px 0;
-        }
+    .price {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin: 15px 0;
+    }
 
-        .product-card p {
-            font-size: 0.95rem;
-            opacity: 0.9;
-        }
+    .product-card button {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 25px;
+        background-color: #f5c542;
+        color: #000;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.2s;
+    }
 
-        .price {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin: 15px 0;
-        }
-
-        .product-card button {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 25px;
-            background-color: #f5c542;
-            color: #000;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
-        }
-
-        .product-card button:hover {
-            background-color: #ffd966;
-            transform: scale(1.05);
-        }
-    </style>
-</head>
+    .product-card button:hover {
+        background-color: #ffd966;
+        transform: scale(1.05);
+    }
+</style>
 
 <body>
-
-    {{template "header" .}}
+    <div style="
+            background: rgba(20, 20, 40, 0.8);
+            padding: 45px;
+            border-radius: 18px;
+            color: #fff;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+        ">
 
     <!-- Page Title -->
     <section class="page-title">
@@ -112,7 +97,6 @@
 
     </section>
 
-    {{template "footer" .}}
-
 </body>
-</html>
+
+{{template "footer" .}}
