@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FantaWorld – Account</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            color: #fff;
+            background:
+                linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
+                url('https://images.unsplash.com/photo-1519681393784-d120267933ba');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* ===== Page Title ===== */
+        .page-title {
+            text-align: center;
+            padding: 60px 20px 30px;
+        }
+
+        .page-title h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+        }
+
+        .page-title p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* ===== Catalog Grid ===== */
+        .catalog {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+    </style>
+</head>
+
+<body>
+
+    {{template "header" .}}
+
+    <!-- Page Title -->
+    <section class="page-title">
+        <h2>Account</h2>
+        <p>Manage your account settings and preferences</p>
+    </section>
+
+    <!-- Account Details -->
+    <section class="catalog">
+        <!-- Account information and settings would go here --> 
+    </section>
+
+    {{template "footer" .}}
+
+</body>
+</html>
