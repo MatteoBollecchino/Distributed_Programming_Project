@@ -23,7 +23,7 @@ make clean          # Clean build artifacts
 
 Browser
   ↓
-Web Server (HTML + sessioni)
+Web Server (HTML + sessions)
   ↓ REST
 Auth / Catalog / Cart Service
   ↓ gRPC
@@ -33,6 +33,8 @@ Database (GORM)
 
 
 ## Project Structure
+
+DA MODIFICARE ALL'OCCORRENZA
 
 dp-ecommerce/
 ├── services/
@@ -54,6 +56,53 @@ dp-ecommerce/
 │   └── auth/
 ├── Makefile
 └── README.md
+
+catalog-service/
+├── cmd/
+│   └── api/
+│       └── main.go
+├── internal/
+│   ├── config/
+│   │   └── config.go
+│   ├── domain/
+│   │   └── product/
+│   │       ├── entity.go
+│   │       ├── repository.go
+│   │       └── service.go
+│   ├── application/
+│   │   └── product/
+│   │       ├── create.go
+│   │       ├── update.go
+│   │       └── list.go
+│   ├── infrastructure/
+│   │   ├── database/
+│   │   │   ├── gorm.go
+│   │   │   └── product_repository.go
+│   │   ├── http/
+│   │   │   ├── handlers.go
+│   │   │   └── router.go
+│   │   └── grpc/
+│   │       └── server.go
+│   └── templates/
+│       └── products.html
+├── go.mod
+└── Makefile
+
+web/
+├── server/
+│   ├── main.go
+│   ├── handlers/
+│   │   ├── login.go
+│   │   ├── catalog.go
+│   │   └── cart.go
+│   └── session/
+│       └── secure_cookie.go
+├── templates/
+│   ├── login.html
+│   ├── catalog.html
+│   ├── cart.html
+│   └── orders.html
+
 
 
 
