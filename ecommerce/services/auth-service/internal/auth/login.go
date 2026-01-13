@@ -5,19 +5,19 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/auth-service/internal/domain/user"
+	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/auth-service/internal/domain"
 )
 
 type LoginUseCase struct {
-	repo user.Repository
+	repo domain.AuthServiceInterface
 }
 
-func NewLoginUseCase(repo user.Repository) *LoginUseCase {
+func NewLoginUseCase(repo domain.AuthServiceInterface) *LoginUseCase {
 	return &LoginUseCase{repo: repo}
 }
 
-func (uc *LoginUseCase) Execute(email, password string) (*user.User, error) {
-	u, err := uc.repo.FindByEmail(email)
+func (uc *LoginUseCase) Execute(username, password string) (*domain.User, error) {
+	u, err := uc.repo.GetUser(username)
 	if err != nil {
 		return nil, errors.New("invalid credentials")
 	}

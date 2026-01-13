@@ -1,0 +1,114 @@
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package auth;
+
+option go_package = "ecommerce/proto/auth"; // folder in which all the generated go files will be stored
+
+enum Role {
+  UNSPECIFIED = 0;
+  CLIENT = 1;
+  ADMIN = 2;
+}
+
+// USER MODEL (without password)
+message User {
+  string username = 1;
+  string email = 2;
+  string phone = 3;
+  Role role = 4;
+}
+
+// LOGIN
+message LoginRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    bool success = 1;
+    User user = 2;
+    string error_message = 3;
+}
+
+// REGISTRATION
+message RegisterRequest {
+    string username = 1;
+    string password = 2;
+    string email = 3;
+    string phone = 4;
+}
+
+message RegisterResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+// PASSWORD CHANGE
+message ChangePasswordRequest {
+  string username = 1;
+  string old_password = 2;
+  string new_password = 3;
+}
+
+message ChangePasswordResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+// UPDATE USER
+message UpdateUserRequest {
+    string username = 1;
+    string email = 2;
+    string phone = 3;
+    Role role = 4;
+}
+
+message UpdateUserResponse {
+    bool success = 1;
+    string error_message = 2;
+}
+
+
+// GET A SINGLE USER
+message GetUserRequest {
+  string username = 1;
+}
+
+message GetUserResponse {
+  bool success = 1;
+  User user = 2;
+  string error_message = 3;
+}
+
+// GET USER LIST
+message GetUsersRequest {}
+
+message GetUsersResponse {
+  bool success = 1;
+  repeated User users = 2;
+  string error_message = 3;
+}
+
+// SERVICES
+service AuthenticationService {
+    rpc Login(LoginRequest) returns (LoginResponse);
+    rpc Register(RegisterRequest) returns (RegisterResponse);
+    rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+    rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+    rpc GetUser(GetUserRequest) returns (GetUserResponse);
+    rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+}

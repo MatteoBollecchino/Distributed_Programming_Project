@@ -9,13 +9,14 @@ const (
 
 /*
 User represents a user account in the system.
-
-Every user is represented in the system by a unique username,
-a hashed password for authentication,
-and a role that defines the user's permissions.
 */
 type User struct {
+	// Username is the unique identifier for the user.
 	Username string
+
+	// Password is the hashed password for the user.
 	Password string
-	Role     Role
+
+	// Role is what defines the user's permissions
+	Role Role
 }
