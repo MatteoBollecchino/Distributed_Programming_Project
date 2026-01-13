@@ -1,8 +1,6 @@
 package domain
 
-/*
-AuthServiceInterface defines the interface for user data access operations.
-*/
+// AuthServiceInterface defines the interface for user data access operations.
 type AuthServiceInterface interface {
 	// Login authenticates a user with the given username and password.
 	Login(username, password string) (*User, error)

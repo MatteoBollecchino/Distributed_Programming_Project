@@ -1,41 +1,66 @@
 package repository
 
 import (
-	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/auth-service/internal/domain"
+	"errors"
+	"strings"
+
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+
+	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/auth-service/internal/domain"
 )
 
-type authRepository struct {
+type AuthRepository struct {
 	db *gorm.DB
 }
 
-func NewUserRepository(db *gorm.DB) *authRepository {
-	return &authRepository{db: db}
+func NewAuthRepository(db *gorm.DB) *AuthRepository {
+	return &AuthRepository{db: db}
 }
 
 // Login authenticates a user with the given username and password, after validating the credentials.
-func (r *authRepository) Login(username, password string) (*domain.User, error) {
+func (r *AuthRepository) Login(username, password string) (*domain.User, error) {
 
-	checkCredetials(username, password)
-
-	var user domain.User
-	if err := r.db.Where("username = ? AND password = ?", username, password).First(&user).Error; err != nil {
+	if err := checkCredetials(username, password); err != nil {
 		return nil, err
 	}
-	return &user, nil
+
+	user, err := r.getUserByUserame(username)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return nil, errors.New("Invalid credentials")
+	}
+
+	return user, nil
 }
 
 // Register creates a new user account with the provided info, after validating the credentials.
-func (r *authRepository) Register(username, password string) error {
+func (r *AuthRepository) Register(username, password string) error {
 
-	checkCredetials(username, password)
+	if err := checkCredetials(username, password); err != nil {
+		return err
+	}
 
-	user := domain.User{Username: username, Password: password}
+	err := uniqueUsername(r.db, username)
+	if err != nil {
+		return err
+	}
+
+	// Hash the password before storing it in the database.
+	hashedPassword, err := r.HashPassword(password)
+	if err != nil {
+		return err
+	}
+
+	user := domain.User{Username: username, Password: hashedPassword}
 	return r.db.Create(&user).Error
 }
 
 // ChangePassword updates the password for a given user, after validating the old credentials and the new password.
-func (r *authRepository) ChangePassword(username, oldPassword, newPassword string) error {
+func (r *AuthRepository) ChangePassword(username, oldPassword, newPassword string) error {
 
 	checkCredetials(username, oldPassword)
 
@@ -43,16 +68,25 @@ func (r *authRepository) ChangePassword(username, oldPassword, newPassword strin
 		return err
 	}
 
-	var user domain.User
-	if err := r.db.Where("username = ? AND password = ?", username, oldPassword).First(&user).Error; err != nil {
+	user, err := r.getUserByUserame(username)
+	if err != nil {
 		return err
 	}
-	user.Password = newPassword
-	return r.db.Save(&user).Error
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
+		return errors.New("Invalid password")
+	}
+
+	user.Password, err = r.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	return r.db.Model(&domain.User{}).Where("username = ?", username).Updates(user).Error
 }
 
 // GetUser retrieves the user information for the specified username, after validating the username.
-func (r *authRepository) GetUser(username string) (*domain.User, error) {
+func (r *AuthRepository) GetUser(username string) (*domain.User, error) {
 
 	if err := validUsername(username); err != nil {
 		return nil, err
@@ -65,8 +99,8 @@ func (r *authRepository) GetUser(username string) (*domain.User, error) {
 	return &user, nil
 }
 
-// GetUsers retrieves all users registered in the system.
-func (r *authRepository) GetUsers() ([]*domain.User, error) {
+// GetAllUsers retrieves all users registered in the system.
+func (r *AuthRepository) GetAllUsers() ([]*domain.User, error) {
 	var users []*domain.User
 	if err := r.db.Find(&users).Error; err != nil {
 		return nil, err
@@ -74,8 +108,13 @@ func (r *authRepository) GetUsers() ([]*domain.User, error) {
 	return users, nil
 }
 
-/* Inserire le funzioni per l'hashing delle password degli utenti */
+// HashPassword hashes the password using bcrypt.
+func (r *AuthRepository) HashPassword(password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(hashedPassword), err
+}
 
+// checkCredetials validates the provided username and password.
 func checkCredetials(username, password string) error {
 	if err := validUsername(username); err != nil {
 		return err
@@ -86,12 +125,61 @@ func checkCredetials(username, password string) error {
 	return nil
 }
 
+// validUsername checks if the username is not an empty line.
 func validUsername(username string) error {
-	// Implement username validation logic here
+
+	if username == "" {
+		return errors.New("Invalid Username")
+	}
+
 	return nil
 }
 
+// validPassword checks if the password has at least 8 characters, contains a number, and a special character.
 func validPassword(password string) error {
-	// Implement password validation logic here
+
+	if len(password) < 8 {
+		return errors.New("Password must be at least 8 characters long")
+	}
+
+	hasNumber := false
+	hasSpecial := false
+	specialCharacters := "!@#$%^&*()-+"
+
+	for _, char := range password {
+		if char >= '0' && char <= '9' {
+			hasNumber = true
+		}
+		if strings.Contains(specialCharacters, string(char)) {
+			hasSpecial = true
+		}
+	}
+
+	if !hasNumber {
+		return errors.New("Password must contain at least one number")
+	}
+
+	if !hasSpecial {
+		return errors.New("Password must contain at least one special character")
+	}
+
 	return nil
+}
+
+// uniqueUsername checks if the username is unique in the database.
+func uniqueUsername(db *gorm.DB, username string) error {
+	var user domain.User
+	if err := db.Where("username = ?", username).First(&user).Error; err == nil {
+		return errors.New("Username already exists")
+	}
+	return nil
+}
+
+// getUserByUserame retrieves a user by username from the database. (will be differente from GetUser as it won't validate the username)
+func (r *AuthRepository) getUserByUserame(username string) (*domain.User, error) {
+	var user domain.User
+	if err := r.db.Where("username = ?", username).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
