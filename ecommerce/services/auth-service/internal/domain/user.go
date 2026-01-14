@@ -1,6 +1,11 @@
 package domain
 
-// pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth"
+/*
+import (
+	"fmt"
+
+	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto"
+)*/
 
 type Role string
 
@@ -28,9 +33,14 @@ func ModelUserToProtoUser(user *User) (*pb.User, error) {
 		return nil, fmt.Errorf("Input argument is nil")
 	}
 
+	var r pb.Role
+	if user.Role == AdminRole {
+		r = pb.Role_ADMIN
+	} else {
+		r = pb.Role_USER
+	}
 	return &pb.User{
 		Username: user.Username,
-		Role:     user.Role,
-	}, nil
-}
-*/
+		Password: user.Password,
+		Role:     r}, nil
+}*/

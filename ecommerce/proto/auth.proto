@@ -14,14 +14,14 @@
 
 syntax = "proto3";
 
-package auth;
+package proto;
 
 // folder in which all the generated go files will be stored
-option go_package = "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth";
+option go_package = "ecommerce/proto";
 
 enum Role {
-  CLIENT = 1;
-  ADMIN = 2;
+  USER = 0;
+  ADMIN = 1;
 }
 
 // USER MODEL
@@ -87,5 +87,5 @@ service AuthenticationService {
     rpc Register(RegisterRequest) returns (RegisterResponse);
     rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
     rpc GetUser(GetUserRequest) returns (GetUserResponse);
-    rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+    rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
 }

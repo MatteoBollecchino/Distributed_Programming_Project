@@ -14,6 +14,12 @@ GO_OPT=paths=source_relative
 PROTO_DIR=ecommerce/proto
 PROTO_FILES=$(wildcard $(PROTO_DIR)/*.proto)
 
+ifeq ($(OS),Windows_NT)
+	CLEAN_PROTO = powershell -Command "Remove-Item -Force -ErrorAction SilentlyContinue $(PROTO_DIR)\*.pb.go"
+else
+	CLEAN_PROTO = rm -f $(PROTO_DIR)/*.pb.go
+endif
+
 # DEFAULT
 .PHONY: help
 help:
@@ -46,10 +52,10 @@ proto:
 
 .PHONY: clean-proto
 clean-proto:
-	rm -f $(PROTO_DIR)/*.pb.go
+	$(CLEAN_PROTO)
 
 # TESTING
-PHONY: test
+.PHONY: test
 test:
 	$(GO) test ./...
 
