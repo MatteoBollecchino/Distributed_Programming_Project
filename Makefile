@@ -1,12 +1,18 @@
 # CONFIG
 APP_NAME=ecommerce
-CMD_DIR=cmd/api
 BIN_DIR=bin
-MAIN_FILE=$(CMD_DIR)/main.go
 
 GO=go
 GOFLAGS=-v
 ENV?=dev
+
+PROTOC=protoc
+
+GO_OUT=.
+GO_OPT=paths=source_relative
+
+PROTO_DIR=ecommerce/proto
+PROTO_FILES=$(wildcard $(PROTO_DIR)/*.proto)
 
 # DEFAULT
 .PHONY: help
@@ -29,6 +35,18 @@ build:
 	mkdir -p $(BIN_DIR)
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 	$(GO) build -o $(BIN_DIR)/$(APP_NAME) $(MAIN_FILE)
+
+# PROTOBUF
+.PHONY: proto
+proto:
+	$(PROTOC) \
+		--go_out=$(GO_OUT) --go_opt=$(GO_OPT) \
+		--go-grpc_out=$(GO_OUT) --go-grpc_opt=$(GO_OPT) \
+		$(PROTO_FILES)
+
+.PHONY: clean-proto
+clean-proto:
+	rm -f $(PROTO_DIR)/*.pb.go
 
 # TESTING
 PHONY: test

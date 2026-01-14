@@ -1,6 +1,6 @@
 package domain
 
-// pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto"
+// pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth"
 
 type Role string
 
@@ -32,4 +32,5 @@ func ModelUserToProtoUser(user *User) (*pb.User, error) {
 		Username: user.Username,
 		Role:     user.Role,
 	}, nil
-}*/
+}
+*/
