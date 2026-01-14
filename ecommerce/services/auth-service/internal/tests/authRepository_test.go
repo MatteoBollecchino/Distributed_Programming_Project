@@ -9,7 +9,6 @@ import (
 
 	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/auth-service/internal/domain"
 	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/auth-service/internal/repository"
-	// "github.com/stretchr/testify/assert"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {

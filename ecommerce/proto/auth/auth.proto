@@ -14,10 +14,10 @@
 
 syntax = "proto3";
 
-package proto;
+package auth;
 
 // folder in which all the generated go files will be stored
-option go_package = "ecommerce/proto";
+option go_package = "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth";
 
 enum Role {
   USER = 0;
