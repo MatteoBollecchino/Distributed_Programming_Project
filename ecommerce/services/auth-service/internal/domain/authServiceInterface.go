@@ -14,6 +14,6 @@ type AuthServiceInterface interface {
 	// GetUser retrieves the user information for the specified username.
 	GetUser(username string) (*User, error)
 
-	// GetUsers retrieves all users registered in the system.
-	GetUsers() ([]*User, error)
+	// GetAllUsers retrieves all users registered in the system.
+	GetAllUsers() ([]*User, error)
 }

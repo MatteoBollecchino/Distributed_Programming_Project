@@ -16,20 +16,19 @@ syntax = "proto3";
 
 package auth;
 
-option go_package = "ecommerce/proto/auth"; // folder in which all the generated go files will be stored
+// folder in which all the generated go files will be stored
+option go_package = "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth";
 
 enum Role {
-  UNSPECIFIED = 0;
   CLIENT = 1;
   ADMIN = 2;
 }
 
-// USER MODEL (without password)
+// USER MODEL
 message User {
   string username = 1;
-  string email = 2;
-  string phone = 3;
-  Role role = 4;
+  string password = 2;
+  Role role = 3;
 }
 
 // LOGIN
@@ -39,22 +38,18 @@ message LoginRequest {
 }
 
 message LoginResponse {
-    bool success = 1;
-    User user = 2;
-    string error_message = 3;
+    User user = 1;
+    string error_message = 2;
 }
 
 // REGISTRATION
 message RegisterRequest {
     string username = 1;
     string password = 2;
-    string email = 3;
-    string phone = 4;
 }
 
 message RegisterResponse {
-    bool success = 1;
-    string error_message = 2;
+    string error_message = 1;
 }
 
 // PASSWORD CHANGE
@@ -65,23 +60,8 @@ message ChangePasswordRequest {
 }
 
 message ChangePasswordResponse {
-    bool success = 1;
-    string error_message = 2;
+    string error_message = 1;
 }
-
-// UPDATE USER
-message UpdateUserRequest {
-    string username = 1;
-    string email = 2;
-    string phone = 3;
-    Role role = 4;
-}
-
-message UpdateUserResponse {
-    bool success = 1;
-    string error_message = 2;
-}
-
 
 // GET A SINGLE USER
 message GetUserRequest {
@@ -89,18 +69,16 @@ message GetUserRequest {
 }
 
 message GetUserResponse {
-  bool success = 1;
-  User user = 2;
-  string error_message = 3;
+  User user = 1;
+  string error_message = 2;
 }
 
-// GET USER LIST
-message GetUsersRequest {}
+// GET ALL USERS LIST
+message GetAllUsersRequest {}
 
-message GetUsersResponse {
-  bool success = 1;
-  repeated User users = 2;
-  string error_message = 3;
+message GetAllUsersResponse {
+  repeated User users = 1;
+  string error_message = 2;
 }
 
 // SERVICES
@@ -108,7 +86,6 @@ service AuthenticationService {
     rpc Login(LoginRequest) returns (LoginResponse);
     rpc Register(RegisterRequest) returns (RegisterResponse);
     rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
-    rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
     rpc GetUser(GetUserRequest) returns (GetUserResponse);
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
 }
