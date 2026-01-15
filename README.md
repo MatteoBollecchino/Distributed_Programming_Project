@@ -35,9 +35,9 @@ Database (GORM)
 
 ## Project Structure
 
-DA MODIFICARE ALL'OCCORRENZA
+METTERE LO SCHEMA CHE SI OTTIENE DAL COMANDO "tree -F ecommerce"
 
-dp-ecommerce/
+ecommerce/
 ├── services/
 │   ├── auth-service/
 │   ├── catalog-service/
@@ -51,53 +51,24 @@ dp-ecommerce/
 │   ├── catalog.proto
 │   ├── order.proto
 │   └── cart.proto
-├── shared/
-│   ├── logger/
-│   ├── middleware/
-│   └── auth/
 ├── Makefile
 └── README.md
 
-catalog-service/
-├── cmd/
-│   └── api/
-│       └── main.go
+*-service/
 ├── internal/
-│   ├── config/
-│   │   └── config.go
 │   ├── domain/
-│   │   └── product/
-│   │       ├── entity.go
-│   │       ├── repository.go
-│   │       └── service.go
-│   ├── application/
-│   │   └── product/
-│   │       ├── create.go
-│   │       ├── update.go
-│   │       └── list.go
-│   ├── infrastructure/
-│   │   ├── database/
-│   │   │   ├── gorm.go
-│   │   │   └── product_repository.go
-│   │   ├── http/
-│   │   │   ├── handlers.go
-│   │   │   └── router.go
-│   │   └── grpc/
-│   │       └── server.go
-│   └── templates/
-│       └── products.html
+│   │   ├── entity.go
+│   │   ├── interface.go
+|   | 
+│   ├── repository/
+│   │   └── product_repository.go
+│   └── tests/
 ├── go.mod
 └── Makefile
 
 web/
 ├── server/
-│   ├── main.go
-│   ├── handlers/
-│   │   ├── login.go
-│   │   ├── catalog.go
-│   │   └── cart.go
-│   └── session/
-│       └── secure_cookie.go
+|-- client/
 ├── templates/
 │   ├── login.html
 │   ├── catalog.html
