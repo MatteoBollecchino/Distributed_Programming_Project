@@ -3,7 +3,6 @@ package tests
 import (
 	"testing"
 
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
@@ -242,16 +241,12 @@ func TestGetCorrectUser(t *testing.T) {
 	if user.Role != pb.Role_USER {
 		t.Fatalf("Expected role %s, got %s", pb.Role_USER, user.Role)
 	}
+
 }
 
-// TESTARE DA QUI IN GIU
-
 func TestGetNonExistentUser(t *testing.T) {
-	db := setupTestDB(t)
-	repo := repository.NewAuthRepository(db)
+	_, repo := setupTest(t)
 
-	// First, set up a default user
-	setupDefaultUser(t, db, repo)
 	username := "nonexistent"
 	_, err := repo.GetUser(username)
 	if err == nil {
@@ -260,11 +255,9 @@ func TestGetNonExistentUser(t *testing.T) {
 }
 
 func TestGetAllUsers(t *testing.T) {
-	db := setupTestDB(t)
-	repo := repository.NewAuthRepository(db)
+	db, repo := setupTest(t)
 
 	// list of domain.User to add
-
 	users := []domain.User{}
 	users = append(users, domain.User{Username: "mario", Password: "MarioPassword1+"})
 	users = append(users, domain.User{Username: "luigi", Password: "LuigiPassword1+"})
@@ -276,7 +269,7 @@ func TestGetAllUsers(t *testing.T) {
 			t.Fatalf("Failed to hash password: %v", err)
 		}
 
-		user := domain.User{Username: u.Username, Password: password}
+		user := domain.User{Username: u.Username, Password: password, Role: domain.UserRole}
 		err = db.Create(&user).Error
 		if err != nil {
 			t.Fatalf("Failed to create user %s: %v", u.Username, err)
@@ -287,21 +280,88 @@ func TestGetAllUsers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetAllUsers failed: %v", err)
 	}
-	if len(list) != 3 {
-		t.Fatalf("Expected 3 users, got %d", len(list))
+	if len(list) != 4 { // 3 added + 1 default
+		t.Fatalf("Expected 4 users, got %d", len(list))
+	}
+
+	// Verify that all users are returned
+	for _, user := range list {
+		if user.Username == "mario" || user.Username == "luigi" || user.Username == "matteo" {
+			continue
+		}
+		if user.Username != "user1" {
+			t.Fatalf("Unexpected username in list: %s", user.Username)
+		}
 	}
 }
 
 func TestHashPassword(t *testing.T) {
-	db := setupTestDB(t)
-	repo := repository.NewAuthRepository(db)
+	_, repo := setupTest(t)
 
 	password := "SomePassword1+"
 	hashedPassword, err := repo.HashPassword(password)
 	if err != nil {
 		t.Fatalf("HashPassword failed: %v", err)
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password)); err != nil {
+	if repo.CheckPassword(hashedPassword, password) != nil {
 		t.Fatalf("Hashed password does not match original password: %v", err)
+	}
+}
+
+func TestCreateAdmin(t *testing.T) {
+	db, repo := setupTest(t)
+	username := "adminUser"
+	password := "AdminPassword1+"
+
+	// Attempt to create an admin user
+	err := repo.CreateAdmin(username, password)
+	if err != nil {
+		t.Fatalf("CreateAdmin failed: %v", err)
+	}
+
+	// Verify the admin user was created
+	var user domain.User
+	err = db.Where("username = ?", username).First(&user).Error
+	if err != nil {
+		t.Fatalf("Failed to retrieve admin user: %v", err)
+	}
+	if user.Username != username {
+		t.Fatalf("Expected username %s, got %s", username, user.Username)
+	}
+	if user.Role != "ADMIN" {
+		t.Fatalf("Expected role ADMIN, got %s", user.Role)
+	}
+}
+
+func TestCreateDefaultUsersAdmins(t *testing.T) {
+	db, repo := setupTest(t)
+
+	err := repo.CreateDefaultUsersAdmins()
+	if err != nil {
+		t.Fatalf("CreateDefaultUsersAdmins failed: %v", err)
+	}
+
+	users, err := repo.GetAllUsers()
+	if err != nil {
+		t.Fatalf("GetAllUsers failed: %v", err)
+	}
+
+	if len(users) != 5 { // 3 default users + 2 default admins
+		t.Fatalf("Expected 5 users, got %d", len(users))
+	}
+
+	for _, dUser := range users {
+		// Verify the user was created
+		var user domain.User
+		err = db.Where("username = ?", dUser.Username).First(&user).Error
+		if err != nil {
+			t.Fatalf("Failed to retrieve registered user: %v", err)
+		}
+		if user.Username != dUser.Username {
+			t.Fatalf("Expected username %s, got %s", dUser.Username, user.Username)
+		}
+		if domain.Role(dUser.Role.String()) != user.Role {
+			t.Fatalf("Expected role %s, got %s", dUser.Role.String(), user.Role)
+		}
 	}
 }

@@ -31,8 +31,8 @@ func (r *AuthRepository) Login(username, password string) (*pb.User, error) {
 		return nil, err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return nil, errors.New("Invalid credentials")
+	if r.CheckPassword(user.Password, password) != nil {
+		return nil, errors.New("Invalid password")
 	}
 
 	pbUser, err := domain.DomainUserToProtoUser(user)
@@ -80,7 +80,7 @@ func (r *AuthRepository) ChangePassword(username, oldPassword, newPassword strin
 		return err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
+	if r.CheckPassword(user.Password, oldPassword) != nil {
 		return errors.New("Invalid password")
 	}
 
@@ -159,6 +159,11 @@ func (r *AuthRepository) HashPassword(password string) (string, error) {
 	return string(hashedPassword), err
 }
 
+// CheckPassword compares a plain password with a hashed password.
+func (r *AuthRepository) CheckPassword(hashedPassword, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+}
+
 // CreateDefaultUsers creates default admins and users.
 func (r *AuthRepository) CreateDefaultUsersAdmins() error {
 
@@ -168,8 +173,8 @@ func (r *AuthRepository) CreateDefaultUsersAdmins() error {
 	}
 
 	defaultAdmins := []domain.User{
-		{Username: "adminBolle", Password: "DefaultPassword1+"},
-		{Username: "adminDani", Password: "DefaultPassword2+"},
+		{Username: "adminBolle", Password: "AdminPassword1+"},
+		{Username: "adminDani", Password: "AdminPassword2+"},
 	}
 
 	for _, du := range defaultUsers {
