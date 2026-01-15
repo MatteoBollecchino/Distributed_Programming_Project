@@ -7,6 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
+	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth"
 	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/auth-service/internal/domain"
 )
 
@@ -19,7 +20,7 @@ func NewAuthRepository(db *gorm.DB) *AuthRepository {
 }
 
 // Login authenticates a user with the given username and password, after validating the credentials.
-func (r *AuthRepository) Login(username, password string) (*domain.User, error) {
+func (r *AuthRepository) Login(username, password string) (*pb.User, error) {
 
 	if err := checkCredetials(username, password); err != nil {
 		return nil, err
@@ -34,7 +35,12 @@ func (r *AuthRepository) Login(username, password string) (*domain.User, error) 
 		return nil, errors.New("Invalid credentials")
 	}
 
-	return user, nil
+	pbUser, err := domain.DomainUserToProtoUser(user)
+	if err != nil {
+		return nil, err
+	}
+
+	return pbUser, nil
 }
 
 // Register creates a new user account with the provided info, after validating the credentials.
@@ -86,7 +92,7 @@ func (r *AuthRepository) ChangePassword(username, oldPassword, newPassword strin
 }
 
 // GetUser retrieves the user information for the specified username, after validating the username.
-func (r *AuthRepository) GetUser(username string) (*domain.User, error) {
+func (r *AuthRepository) GetUser(username string) (*pb.User, error) {
 
 	if err := validUsername(username); err != nil {
 		return nil, err
@@ -96,16 +102,32 @@ func (r *AuthRepository) GetUser(username string) (*domain.User, error) {
 	if err := r.db.Where("username = ?", username).First(&user).Error; err != nil {
 		return nil, err
 	}
-	return &user, nil
+
+	pbUser, err := domain.DomainUserToProtoUser(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	return pbUser, nil
 }
 
 // GetAllUsers retrieves all users registered in the system.
-func (r *AuthRepository) GetAllUsers() ([]*domain.User, error) {
+func (r *AuthRepository) GetAllUsers() ([]*pb.User, error) {
 	var users []*domain.User
 	if err := r.db.Find(&users).Error; err != nil {
 		return nil, err
 	}
-	return users, nil
+
+	var pbUsers []*pb.User
+	for _, user := range users {
+		pbUser, err := domain.DomainUserToProtoUser(user)
+		if err != nil {
+			return nil, err
+		}
+		pbUsers = append(pbUsers, pbUser)
+	}
+
+	return pbUsers, nil
 }
 
 // HashPassword hashes the password using bcrypt.
@@ -175,7 +197,8 @@ func uniqueUsername(db *gorm.DB, username string) error {
 	return nil
 }
 
-// getUserByUserame retrieves a user by username from the database. (will be differente from GetUser as it won't validate the username)
+// getUserByUserame retrieves a user by username from the database.
+// (will be differente from GetUser as it has *pb.User return type)
 func (r *AuthRepository) getUserByUserame(username string) (*domain.User, error) {
 	var user domain.User
 	if err := r.db.Where("username = ?", username).First(&user).Error; err != nil {

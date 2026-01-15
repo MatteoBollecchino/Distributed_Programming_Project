@@ -1,11 +1,10 @@
 package domain
 
-/*
 import (
 	"fmt"
 
-	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto"
-)*/
+	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth"
+)
 
 type Role string
 
@@ -26,9 +25,8 @@ type User struct {
 	Role Role
 }
 
-/*
-// ModelUserToProtoUser converts a model.User into a pb.User
-func ModelUserToProtoUser(user *User) (*pb.User, error) {
+// DomainUserToProtoUser converts a model.User into a pb.User
+func DomainUserToProtoUser(user *User) (*pb.User, error) {
 	if user == nil {
 		return nil, fmt.Errorf("Input argument is nil")
 	}
@@ -43,4 +41,4 @@ func ModelUserToProtoUser(user *User) (*pb.User, error) {
 		Username: user.Username,
 		Password: user.Password,
 		Role:     r}, nil
-}*/
+}

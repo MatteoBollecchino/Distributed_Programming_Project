@@ -9,7 +9,7 @@ import (
 
 // AuthServer implements the authentication service gRPC server.
 type AuthServer struct {
-	pb.UnimplementedAuthServiceServer
+	pb.AuthenticationServiceServer
 	repo domain.AuthServiceInterface
 }
 
@@ -23,7 +23,7 @@ func (s *AuthServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Login
 	if err != nil {
 		return nil, err
 	}
-	return &pb.LoginResponse{Username: user.Username}, nil
+	return &pb.LoginResponse{User: &pb.User{Username: user.Username}}, nil
 }
 
 // Register creates a new user account with the provided info.
@@ -32,16 +32,16 @@ func (s *AuthServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb
 	if err != nil {
 		return nil, err
 	}
-	return &pb.RegisterResponse{Message: "User registered successfully"}, nil
+	return &pb.RegisterResponse{ErrorMessage: "User registered successfully"}, nil
 }
 
 // ChangePassword updates the password for the specified user.
-func (s *AuthServer) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequest) (*pb.UpdatePasswordResponse, error) {
+func (s *AuthServer) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequest) (*pb.ChangePasswordResponse, error) {
 	err := s.repo.ChangePassword(req.Username, req.OldPassword, req.NewPassword)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.UpdatePasswordResponse{Message: "Password updated successfully"}, nil
+	return &pb.ChangePasswordResponse{ErrorMessage: "Password updated successfully"}, nil
 }
 
 // GetUser retrieves the user information for the specified username.

@@ -2,10 +2,10 @@ module github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/se
 
 go 1.25.1
 
-// replace github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto => ../proto
+replace github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto => ../../proto
 
 require (
-	github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto v0.0.0-20260114162401-55bee74f3b5d // indirect
+	github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto v0.0.0-20260114191157-b383f191a376
 	github.com/mattn/go-sqlite3 v1.14.33 // indirect
 	golang.org/x/crypto v0.47.0
 )
@@ -18,4 +18,10 @@ require (
 	gorm.io/gorm v1.31.1
 )
 
-// replace github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto => ./proto
+require (
+	golang.org/x/net v0.49.0 // indirect
+	golang.org/x/sys v0.40.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260114163908-3f89685c29c3 // indirect
+	google.golang.org/grpc v1.78.0 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
+)
