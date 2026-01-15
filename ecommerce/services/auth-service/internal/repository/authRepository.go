@@ -43,7 +43,7 @@ func (r *AuthRepository) Login(username, password string) (*pb.User, error) {
 	return pbUser, nil
 }
 
-// Register creates a new user account with the provided info, after validating the credentials.
+// Register creates a new USER account with the provided info, after validating the credentials.
 func (r *AuthRepository) Register(username, password string) error {
 
 	if err := checkCredetials(username, password); err != nil {
@@ -61,7 +61,8 @@ func (r *AuthRepository) Register(username, password string) error {
 		return err
 	}
 
-	user := domain.User{Username: username, Password: hashedPassword}
+	// Register creates only users with USER role
+	user := domain.User{Username: username, Password: hashedPassword, Role: domain.UserRole}
 	return r.db.Create(&user).Error
 }
 
@@ -130,11 +131,63 @@ func (r *AuthRepository) GetAllUsers() ([]*pb.User, error) {
 	return pbUsers, nil
 }
 
+// CreateAdmin creates a new ADMIN account with the provided info, after validating the credentials.
+// Admins are created separately from regular users.
+// (The username must be unique as well)
+func (r *AuthRepository) CreateAdmin(username, password string) error {
+
+	if err := checkCredetials(username, password); err != nil {
+		return err
+	}
+	err := uniqueUsername(r.db, username)
+	if err != nil {
+		return err
+	}
+
+	// Hash the password before storing it in the database.
+	hashedPassword, err := r.HashPassword(password)
+	if err != nil {
+		return err
+	}
+	user := domain.User{Username: username, Password: hashedPassword, Role: domain.AdminRole}
+	return r.db.Create(&user).Error
+}
+
 // HashPassword hashes the password using bcrypt.
 func (r *AuthRepository) HashPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(hashedPassword), err
 }
+
+// CreateDefaultUsers creates default admins and users.
+func (r *AuthRepository) CreateDefaultUsersAdmins() error {
+
+	defaultUsers := []domain.User{
+		{Username: "Marco", Password: "DefaultPassword1+"},
+		{Username: "Noemi", Password: "DefaultPassword2+"},
+	}
+
+	defaultAdmins := []domain.User{
+		{Username: "adminBolle", Password: "DefaultPassword1+"},
+		{Username: "adminDani", Password: "DefaultPassword2+"},
+	}
+
+	for _, du := range defaultUsers {
+		if err := r.Register(du.Username, du.Password); err != nil {
+			return err
+		}
+	}
+
+	for _, da := range defaultAdmins {
+		if err := r.CreateAdmin(da.Username, da.Password); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// PRIVATE FUNCTIONS AND METHODS
 
 // checkCredetials validates the provided username and password.
 func checkCredetials(username, password string) error {
