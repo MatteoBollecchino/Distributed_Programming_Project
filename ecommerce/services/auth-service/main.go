@@ -13,6 +13,7 @@ import (
 
 	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth"
 	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/auth-service/internal"
+	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/auth-service/internal/domain"
 	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/auth-service/internal/repository"
 )
 
@@ -24,6 +25,11 @@ func main() {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect database: %v", err)
+	}
+
+	// Migrate the schema
+	if err := db.AutoMigrate(&domain.User{}); err != nil {
+		log.Fatalf("Failed to migrate database schema: %v", err)
 	}
 
 	// Start gRPC server
