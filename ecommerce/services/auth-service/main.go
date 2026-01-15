@@ -7,12 +7,6 @@ import (
 	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/auth-service/internal"
 )
 
-/*
-	"services/auth-service/internal/application/auth"
-	"services/auth-service/internal/infrastructure/database"
-	"services/auth-service/internal/infrastructure/http"
-	"services/auth-service/internal/infrastructure/repository"*/
-
 func main() {
 	authServer := internal.NewAuthServer(nil)
 	_ = authServer
