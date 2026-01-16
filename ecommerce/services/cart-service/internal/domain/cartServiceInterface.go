@@ -1,5 +1,7 @@
 package domain
 
+import pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/cart"
+
 type CartServiceInterface interface {
 
 	// Add an item to the cart
@@ -9,10 +11,10 @@ type CartServiceInterface interface {
 	RemoveItemFromCart(username string, itemID string) error
 
 	// Update the quantity of an item in the cart
-	UpdateItemQuantity(username string, itemID string, quantity int) error
+	UpdateItemQuantity(username string, itemID string, quantity uint32) error
 
 	// Retrieve the cart for a user
-	GetCart(username string) (*Cart, error)
+	GetCart(username string) (*pb.Cart, error)
 
 	// Clear the cart for a user
 	ClearCart(username string) error
