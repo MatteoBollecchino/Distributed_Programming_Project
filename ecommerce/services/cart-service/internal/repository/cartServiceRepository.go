@@ -30,15 +30,36 @@ func (r *CartServiceRepository) AddItemToCart(username string, item *pb.CartItem
 
 	// If the cart does not exist, create a new one
 	if !found {
+		cart = &domain.Cart{
+			Username: username,
+			Items:    []domain.CartItem{},
+		}
 		err := r.db.Create(&cart).Error
 		if err != nil {
-
+			return err
 		}
 	}
 
 	// Add the item to the cart
 
+	// Check if the item already exists in the cart
+	itemIndex, _ := findItemInCart(cart, item.ItemId)
+	if itemIndex != -1 {
+		// If it exists, update the quantity
+		cart.Items[itemIndex].Quantity += item.Quantity
+	} else {
+		// If it does not exist, add it to the cart
+		cart.Items = append(cart.Items, domain.CartItem{
+			ItemID:   item.ItemId,
+			Quantity: item.Quantity,
+		})
+	}
+
 	// Save the updated cart back to the database
+	err = r.db.Save(&cart).Error
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -47,12 +68,33 @@ func (r *CartServiceRepository) AddItemToCart(username string, item *pb.CartItem
 func (r *CartServiceRepository) RemoveItemFromCart(username string, itemID string) error {
 
 	// Retrieve the cart of the user from the database
+	found, cart, err := r.RetrieveCart(username)
+	if err != nil {
+		return err
+	}
 
 	// If the cart does not exist, return an error
+	if !found {
+		return status.Errorf(codes.NotFound, "cart not found for user: %s", username)
+	}
 
 	// Find the item in the cart
+	itemIndex, _ := findItemInCart(cart, itemID)
+
+	// If the item is not found, return an error
+	if itemIndex == -1 {
+		return status.Errorf(codes.NotFound, "item with ID %s not found in cart for user: %s", itemID, username)
+	}
 
 	// Remove the item from the cart
+	cart.Items = append(cart.Items[:itemIndex], cart.Items[itemIndex+1:]...)
+
+	// Save the updated cart back to the database
+	err = r.db.Save(&cart).Error
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -60,12 +102,31 @@ func (r *CartServiceRepository) RemoveItemFromCart(username string, itemID strin
 func (r *CartServiceRepository) UpdateItemQuantity(username string, itemID string, quantity uint32) error {
 
 	// Retrieve the cart of the user from the database
+	found, cart, err := r.RetrieveCart(username)
+	if err != nil {
+		return err
+	}
 
 	// If the cart does not exist, return an error
+	if !found {
+		return status.Errorf(codes.NotFound, "cart not found for user: %s", username)
+	}
 
 	// Find the item in the cart
+	itemIndex, _ := findItemInCart(cart, itemID)
+
+	// If the item is not found, return an error
+	if itemIndex == -1 {
+		return status.Errorf(codes.NotFound, "item with ID %s not found in cart for user: %s", itemID, username)
+	}
 
 	// Update the quantity of the item
+	cart.Items[itemIndex].Quantity = quantity
+
+	err = r.db.Save(&cart).Error
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -74,37 +135,77 @@ func (r *CartServiceRepository) UpdateItemQuantity(username string, itemID strin
 func (r *CartServiceRepository) GetCart(username string) (*pb.Cart, error) {
 
 	// Retrieve the cart of the user from the database
+	found, cart, err := r.RetrieveCart(username)
+	if err != nil {
+		return nil, err
+	}
 
 	// If the cart does not exist, return nil and an error
+	if !found {
+		return nil, status.Errorf(codes.NotFound, "cart not found for user: %s", username)
+	}
 
 	// Convert the cart to pb.Cart and return it
+	protoCart, err := domain.DomainCartToProtoCart(cart)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	return protoCart, nil
 }
 
 // ClearCart clears the cart for a specific user
 func (r *CartServiceRepository) ClearCart(username string) error {
 
 	// Retrieve the cart of the user from the database
+	found, cart, err := r.RetrieveCart(username)
+	if err != nil {
+		return err
+	}
 
 	// If the cart does not exist, return an error
+	if !found {
+		return status.Errorf(codes.NotFound, "cart not found for user: %s", username)
+	}
 
 	// Clear all items from the cart
+	cart.Items = []domain.CartItem{}
+
+	// Save the updated cart back to the database
+	err = r.db.Save(&cart).Error
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
+// DA VALUTARE SE CAMBIARE LA STRUTTURA DEL PROGETTO E INSERIRE IL PREZZO NEL DOMAIN CARTITEM
+// PER POI IMPLEMENTARE UN PAYMENT SERVICE
+/*
 // CalculateTotalPrice calculates the total price of the cart
 func (r *CartServiceRepository) CalculateTotalPrice(username string) (float64, error) {
 
 	// Retrieve the cart of the user from the database
+	found, cart, err := r.RetrieveCart(username)
+	if err != nil {
+		return 0.0, err
+	}
 
 	// If the cart does not exist, return 0 and an error
+	if !found {
+		return 0.0, status.Errorf(codes.NotFound, "cart not found for user: %s", username)
+	}
 
 	// Calculate the total price of the items in the cart
 
-	return 0.0, nil
-}
+	var total float64 = 0.0
+	for _, item := range cart.Items {
+		total += float64(item.Quantity) * item.Price
+	}
+
+	return total, nil
+}*/
 
 // RetrieveCart retrieves the cart for a specific user from the database
 func (r *CartServiceRepository) RetrieveCart(username string) (bool, *domain.Cart, error) {
@@ -120,4 +221,14 @@ func (r *CartServiceRepository) RetrieveCart(username string) (bool, *domain.Car
 	}
 
 	return true, cart, nil
+}
+
+// findItemInCart searches for an item in the cart by its ID and returns its index and a pointer to the item
+func findItemInCart(cart *domain.Cart, itemID string) (int, *domain.CartItem) {
+	for i, cartItem := range cart.Items {
+		if cartItem.ItemID == itemID {
+			return i, &cart.Items[i]
+		}
+	}
+	return -1, nil
 }
