@@ -5,7 +5,7 @@ import pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerc
 type CartServiceInterface interface {
 
 	// Add an item to the cart
-	AddItemToCart(username string, item CartItem) error
+	AddItemToCart(username string, item *pb.CartItem) error
 
 	// Remove an item from the cart
 	RemoveItemFromCart(username string, itemID string) error
