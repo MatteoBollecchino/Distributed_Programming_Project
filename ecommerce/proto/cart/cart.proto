@@ -23,6 +23,7 @@ option go_package = "github.com/MatteoBollecchino/Distributed_Programming_Projec
 message CartItem{
     string item_id = 1;
     uint32 quantity = 2;
+    double price = 3;
 }
 
 // CART

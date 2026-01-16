@@ -9,10 +9,10 @@ import (
 type Cart struct {
 
 	// Username is the unique identifier for the cart owner.
-	Username string
+	Username string `gorm:"primaryKey"`
 
 	// Items holds the items in the cart.
-	Items []CartItem
+	Items []CartItem `gorm:"foreignKey:CartID;constraint:OnDelete:CASCADE"`
 }
 
 // DomainCartToProtoCart converts a model.Cart into a pb.Cart

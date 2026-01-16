@@ -180,9 +180,6 @@ func (r *CartServiceRepository) ClearCart(username string) error {
 	return nil
 }
 
-// DA VALUTARE SE CAMBIARE LA STRUTTURA DEL PROGETTO E INSERIRE IL PREZZO NEL DOMAIN CARTITEM
-// PER POI IMPLEMENTARE UN PAYMENT SERVICE
-/*
 // CalculateTotalPrice calculates the total price of the cart
 func (r *CartServiceRepository) CalculateTotalPrice(username string) (float64, error) {
 
@@ -205,7 +202,7 @@ func (r *CartServiceRepository) CalculateTotalPrice(username string) (float64, e
 	}
 
 	return total, nil
-}*/
+}
 
 // RetrieveCart retrieves the cart for a specific user from the database
 func (r *CartServiceRepository) RetrieveCart(username string) (bool, *domain.Cart, error) {
