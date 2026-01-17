@@ -9,13 +9,16 @@ import (
 type CartItem struct {
 
 	// ItemID is the unique identifier for the item.
-	ItemID string `gorm:"primaryKey"`
+	ItemID string `gorm:"primaryKey; not null; check:item_id <> ''"`
+
+	// CartUsername is the username of the cart owner.
+	CartUsername string `gorm:"not null; check:cart_username <> ''"`
 
 	// Quantity indicates how many of the item are in the cart.
-	Quantity uint32
+	Quantity uint32 `gorm:"not null; check:quantity > 0"`
 
 	// Price indicates the price of a single item.
-	Price float64
+	Price float64 `gorm:"not null; check:price >= 0"`
 }
 
 // DomainCartItemToProtoCartItem converts a model.CartItem into a pb.CartItem

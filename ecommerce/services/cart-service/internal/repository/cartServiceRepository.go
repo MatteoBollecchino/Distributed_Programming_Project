@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	//"log"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -19,12 +20,11 @@ func NewCartServiceRepository(db *gorm.DB) *CartServiceRepository {
 	return &CartServiceRepository{db: db}
 }
 
-// AddItemToCart adds an item to the cart of a specific user
 func (r *CartServiceRepository) AddItemToCart(username string, item *pb.CartItem) error {
 
 	// Retrieve the cart of the user from the database
 	found, cart, err := r.RetrieveCart(username)
-	if err != nil {
+	if err != nil && found {
 		return err
 	}
 
@@ -34,8 +34,7 @@ func (r *CartServiceRepository) AddItemToCart(username string, item *pb.CartItem
 			Username: username,
 			Items:    []domain.CartItem{},
 		}
-		err := r.db.Create(&cart).Error
-		if err != nil {
+		if err := r.db.Session(&gorm.Session{FullSaveAssociations: true}).Create(cart).Error; err != nil {
 			return err
 		}
 	}
@@ -43,21 +42,20 @@ func (r *CartServiceRepository) AddItemToCart(username string, item *pb.CartItem
 	// Add the item to the cart
 
 	// Check if the item already exists in the cart
-	itemIndex, _ := findItemInCart(cart, item.ItemId)
+	itemIndex := findItemInCart(cart.Items, item.ItemId)
 	if itemIndex != -1 {
-		// If it exists, update the quantity
 		cart.Items[itemIndex].Quantity += item.Quantity
 	} else {
-		// If it does not exist, add it to the cart
 		cart.Items = append(cart.Items, domain.CartItem{
-			ItemID:   item.ItemId,
-			Quantity: item.Quantity,
+			ItemID:       item.ItemId,
+			CartUsername: cart.Username,
+			Quantity:     item.Quantity,
+			Price:        item.Price,
 		})
 	}
 
 	// Save the updated cart back to the database
-	err = r.db.Save(&cart).Error
-	if err != nil {
+	if err := r.db.Session(&gorm.Session{FullSaveAssociations: true}).Save(cart).Error; err != nil {
 		return err
 	}
 
@@ -79,7 +77,7 @@ func (r *CartServiceRepository) RemoveItemFromCart(username string, itemID strin
 	}
 
 	// Find the item in the cart
-	itemIndex, _ := findItemInCart(cart, itemID)
+	itemIndex := findItemInCart(cart.Items, itemID)
 
 	// If the item is not found, return an error
 	if itemIndex == -1 {
@@ -90,7 +88,7 @@ func (r *CartServiceRepository) RemoveItemFromCart(username string, itemID strin
 	cart.Items = append(cart.Items[:itemIndex], cart.Items[itemIndex+1:]...)
 
 	// Save the updated cart back to the database
-	err = r.db.Save(&cart).Error
+	err = r.db.Session(&gorm.Session{FullSaveAssociations: true}).Save(cart).Error
 	if err != nil {
 		return err
 	}
@@ -113,7 +111,7 @@ func (r *CartServiceRepository) UpdateItemQuantity(username string, itemID strin
 	}
 
 	// Find the item in the cart
-	itemIndex, _ := findItemInCart(cart, itemID)
+	itemIndex := findItemInCart(cart.Items, itemID)
 
 	// If the item is not found, return an error
 	if itemIndex == -1 {
@@ -123,7 +121,7 @@ func (r *CartServiceRepository) UpdateItemQuantity(username string, itemID strin
 	// Update the quantity of the item
 	cart.Items[itemIndex].Quantity = quantity
 
-	err = r.db.Save(&cart).Error
+	err = r.db.Session(&gorm.Session{FullSaveAssociations: true}).Save(cart).Error
 	if err != nil {
 		return err
 	}
@@ -172,7 +170,7 @@ func (r *CartServiceRepository) ClearCart(username string) error {
 	cart.Items = []domain.CartItem{}
 
 	// Save the updated cart back to the database
-	err = r.db.Save(&cart).Error
+	err = r.db.Session(&gorm.Session{FullSaveAssociations: true}).Save(cart).Error
 	if err != nil {
 		return err
 	}
@@ -209,7 +207,7 @@ func (r *CartServiceRepository) RetrieveCart(username string) (bool, *domain.Car
 
 	var cart *domain.Cart
 
-	err := r.db.Where("username = ?", username).First(&cart).Error
+	err := r.db.Preload("Items").Where("username = ?", username).First(&cart).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil, status.Errorf(codes.NotFound, "cart not found")
@@ -221,11 +219,12 @@ func (r *CartServiceRepository) RetrieveCart(username string) (bool, *domain.Car
 }
 
 // findItemInCart searches for an item in the cart by its ID and returns its index and a pointer to the item
-func findItemInCart(cart *domain.Cart, itemID string) (int, *domain.CartItem) {
-	for i, cartItem := range cart.Items {
+func findItemInCart(cartList []domain.CartItem, itemID string) int {
+
+	for i, cartItem := range cartList {
 		if cartItem.ItemID == itemID {
-			return i, &cart.Items[i]
+			return i
 		}
 	}
-	return -1, nil
+	return -1
 }
