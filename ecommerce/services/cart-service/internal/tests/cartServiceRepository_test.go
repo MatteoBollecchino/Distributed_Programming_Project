@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"log"
 	"testing"
 
 	"gorm.io/driver/sqlite"
@@ -24,7 +25,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-func setupDefaultCarts(t *testing.T, db *gorm.DB, repo *repository.CartServiceRepository) {
+func setupDefaultCarts(t *testing.T, db *gorm.DB) {
 
 	cart1 := &domain.Cart{
 		Username: "user1",
@@ -55,7 +56,7 @@ func setupTest(t *testing.T) (*gorm.DB, *repository.CartServiceRepository) {
 	db := setupTestDB(t)
 	repo := repository.NewCartServiceRepository(db)
 
-	setupDefaultCarts(t, db, repo)
+	setupDefaultCarts(t, db)
 
 	return db, repo
 }
@@ -216,5 +217,384 @@ func TestAddItemToCartWithZeroPrice(t *testing.T) {
 	}
 	if len(cart.Items) != 3 {
 		t.Errorf("Expected 3 items in cart after failed addition, got %d", len(cart.Items))
+	}
+}
+
+func TestRemoveExistingItemFromCart(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Verify initial quantity of item3 in user2's cart
+	var initialCart domain.Cart
+	if err := db.Preload("Items").Where("username = ?", "user2").First(&initialCart).Error; err != nil {
+		t.Fatalf("Failed to retrieve initial cart: %v", err)
+	}
+
+	if len(initialCart.Items) != 2 {
+		t.Fatalf("Expected 2 items before removal, got %d", len(initialCart.Items))
+	}
+
+	// Test removing an existing item from the cart
+	err := repo.RemoveItemFromCart("user2", "item3")
+	if err != nil {
+		t.Fatalf("Failed to remove existing item from cart: %v", err)
+	}
+
+	// Verify if the item was removed correctly
+	var cart domain.Cart
+	if err := db.Preload("Items").Where("username = ?", "user2").First(&cart).Error; err != nil {
+		t.Fatalf("Failed to retrieve cart from database: %v", err)
+	}
+
+	if len(cart.Items) != 1 {
+		t.Fatalf("Expected 1 item in cart after removal, got %d", len(cart.Items))
+	}
+
+	log.Printf("%v", cart.Items)
+
+	for _, item := range cart.Items {
+		if item.ItemID == "item3" {
+			t.Fatalf("item3 should have been removed from cart")
+		}
+	}
+}
+
+func TestRemoveNonExistingItemFromCart(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test removing a non-existing item from the cart
+	err := repo.RemoveItemFromCart("user1", "nonexistent_item")
+	if err == nil {
+		t.Errorf("Expected error when removing non-existing item, got nil")
+	}
+
+	// Verify that the cart remains unchanged
+	var cart domain.Cart
+	err = db.Preload("Items").Where("username = ?", "user1").First(&cart).Error
+	if err != nil {
+		t.Errorf("Failed to retrieve cart from database: %v", err)
+	}
+	if len(cart.Items) != 2 {
+		t.Errorf("Expected 2 items in cart after failed removal, got %d", len(cart.Items))
+	}
+}
+
+func TestRemoveItemFromNonExistingCart(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test removing an item from a non-existing cart
+	err := repo.RemoveItemFromCart("nonexistent_user", "item1")
+	if err == nil {
+		t.Errorf("Expected error when removing item from non-existing cart, got nil")
+	}
+
+	// Verify that no cart was created
+	var cart domain.Cart
+	err = db.Preload("Items").Where("username = ?", "nonexistent_user").First(&cart).Error
+	if err == nil {
+		t.Errorf("Expected no cart for nonexistent_user, but found one")
+	}
+}
+
+func TestRemoveItemFromCartWithEmptyID(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test removing an item with empty ID
+	err := repo.RemoveItemFromCart("user1", "")
+	if err == nil {
+		t.Errorf("Expected error when removing item with empty ID, got nil")
+	}
+
+	// Verify that the cart remains unchanged
+	var cart domain.Cart
+	err = db.Preload("Items").Where("username = ?", "user1").First(&cart).Error
+	if err != nil {
+		t.Errorf("Failed to retrieve cart from database: %v", err)
+	}
+	if len(cart.Items) != 2 {
+		t.Errorf("Expected 2 items in cart after failed removal, got %d", len(cart.Items))
+	}
+}
+
+func TestRemoveItemFromCartWithEmptyUsername(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test removing an item with empty username
+	err := repo.RemoveItemFromCart("", "item1")
+	if err == nil {
+		t.Errorf("Expected error when removing item with empty username, got nil")
+	}
+
+	// Verify that the cart remains unchanged
+	var cart domain.Cart
+	err = db.Preload("Items").Where("username = ?", "").First(&cart).Error
+	if err == nil {
+		t.Errorf("Failed to retrieve cart from database: %v", err)
+	}
+	if len(cart.Items) != 0 {
+		t.Errorf("Expected 0 items in cart after failed removal, got %d", len(cart.Items))
+	}
+}
+
+func TestRemoveItemFromCartWithEmptyIDAndUsername(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test removing an item with empty ID and username
+	err := repo.RemoveItemFromCart("", "")
+	if err == nil {
+		t.Errorf("Expected error when removing item with empty ID and username, got nil")
+	}
+
+	// Verify that the cart remains unchanged
+	var cart domain.Cart
+	err = db.Preload("Items").Where("username = ?", "").First(&cart).Error
+	if err == nil {
+		t.Errorf("Failed to retrieve cart from database: %v", err)
+	}
+	if len(cart.Items) != 0 {
+		t.Errorf("Expected 0 items in cart after failed removal, got %d", len(cart.Items))
+	}
+}
+
+func TestUpdateItemQuantityInCart(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test updating the quantity of an existing item in the cart
+	err := repo.UpdateItemQuantity("user1", "item1", 5)
+	if err != nil {
+		t.Errorf("Failed to update item quantity in cart: %v", err)
+	}
+
+	// Verify if the quantity was updated correctly
+	var cart domain.Cart
+	err = db.Preload("Items").Where("username = ?", "user1").First(&cart).Error
+	if err != nil {
+		t.Errorf("Failed to retrieve cart from database: %v", err)
+	}
+
+	for _, item := range cart.Items {
+		if item.ItemID == "item1" {
+			if item.Quantity != 5 {
+				t.Errorf("Expected quantity 5 for item1, got %d", item.Quantity)
+			}
+		}
+	}
+}
+
+func TestUpdateNonExistingItemQuantityInCart(t *testing.T) {
+	db, repo := setupTest(t)
+
+	var previousCart domain.Cart
+	err := db.Preload("Items").Where("username = ?", "user1").First(&previousCart).Error
+
+	// Test updating the quantity of a non-existing item in the cart
+	err = repo.UpdateItemQuantity("user1", "nonexistent_item", 5)
+	if err == nil {
+		t.Errorf("Expected error when updating quantity of non-existing item, got nil")
+	}
+
+	// Verify that the cart remains unchanged
+	var cart domain.Cart
+	err = db.Preload("Items").Where("username = ?", "user1").First(&cart).Error
+	if err != nil {
+		t.Errorf("Failed to retrieve cart from database: %v", err)
+	}
+
+	for i, item := range cart.Items {
+		if item.Quantity != previousCart.Items[i].Quantity {
+			t.Errorf("Expected quantity %d for item%d, got %d", previousCart.Items[i].Quantity, i+1, item.Quantity)
+		}
+	}
+}
+
+func TestUpdateItemQuantityInNonExistingCart(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test updating the quantity of an item in a non-existing cart
+	err := repo.UpdateItemQuantity("nonexistent_user", "item1", 5)
+	if err == nil {
+		t.Errorf("Expected error when updating item quantity in non-existing cart, got nil")
+	}
+
+	// Verify that no cart was created
+	var cart domain.Cart
+	err = db.Preload("Items").Where("username = ?", "nonexistent_user").First(&cart).Error
+	if err == nil {
+		t.Errorf("Expected no cart for nonexistent_user, but found one")
+	}
+}
+
+func TestUpdateItemQuantityInCartWithEmptyID(t *testing.T) {
+	db, repo := setupTest(t)
+
+	var previousCart domain.Cart
+	err := db.Preload("Items").Where("username = ?", "user1").First(&previousCart).Error
+
+	// Test updating the quantity of an item with empty ID
+	err = repo.UpdateItemQuantity("user1", "", 5)
+	if err == nil {
+		t.Errorf("Expected error when updating item quantity with empty ID, got nil")
+	}
+
+	// Verify that the cart remains unchanged
+	var cart domain.Cart
+	err = db.Preload("Items").Where("username = ?", "user1").First(&cart).Error
+	if err != nil {
+		t.Errorf("Failed to retrieve cart from database: %v", err)
+	}
+
+	for i, item := range cart.Items {
+		if item.Quantity != previousCart.Items[i].Quantity {
+			t.Errorf("Expected quantity %d for item%d, got %d", previousCart.Items[i].Quantity, i+1, item.Quantity)
+		}
+	}
+}
+
+func TestUpdateItemQuantityInCartWithEmptyUsername(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test updating the quantity of an item with empty username
+	err := repo.UpdateItemQuantity("", "item1", 5)
+	if err == nil {
+		t.Errorf("Expected error when updating item quantity with empty username, got nil")
+	}
+
+	// Verify that the cart remains unchanged
+	var cart domain.Cart
+	err = db.Preload("Items").Where("username = ?", "").First(&cart).Error
+	if err == nil {
+		t.Errorf("Failed to retrieve cart from database: %v", err)
+	}
+	if len(cart.Items) != 0 {
+		t.Errorf("Expected 0 items in cart after failed update, got %d", len(cart.Items))
+	}
+}
+
+func TestUpdateItemQuantityInCartWithEmptyIDAndUsername(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test updating the quantity of an item with empty ID and username
+	err := repo.UpdateItemQuantity("", "", 5)
+	if err == nil {
+		t.Errorf("Expected error when updating item quantity with empty ID and username, got nil")
+	}
+
+	// Verify that the cart remains unchanged
+	var cart domain.Cart
+	err = db.Preload("Items").Where("username = ?", "").First(&cart).Error
+	if err == nil {
+		t.Errorf("Failed to retrieve cart from database: %v", err)
+	}
+	if len(cart.Items) != 0 {
+		t.Errorf("Expected 0 items in cart after failed update, got %d", len(cart.Items))
+	}
+}
+
+func TestGetExistingCart(t *testing.T) {
+	_, repo := setupTest(t)
+
+	// Test retrieving an existing cart
+	cart, err := repo.GetCart("user1")
+	if err != nil {
+		t.Errorf("Failed to retrieve existing cart: %v", err)
+	}
+	if cart.Username != "user1" {
+		t.Errorf("Expected cart username 'user1', got '%s'", cart.Username)
+	}
+	if len(cart.Items) != 2 {
+		t.Errorf("Expected 2 items in cart, got %d", len(cart.Items))
+	}
+}
+
+func TestGetNonExistingCart(t *testing.T) {
+	_, repo := setupTest(t)
+
+	// Test retrieving a non-existing cart
+	_, err := repo.GetCart("nonexistent_user")
+	if err == nil {
+		t.Errorf("Expected error when retrieving non-existing cart, got nil")
+	}
+}
+
+func TestGetCartWithEmptyUsername(t *testing.T) {
+	_, repo := setupTest(t)
+
+	// Test retrieving a cart with empty username
+	_, err := repo.GetCart("")
+	if err == nil {
+		t.Errorf("Expected error when retrieving cart with empty username, got nil")
+	}
+}
+
+func TestClearExistingCart(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test clearing an existing cart
+	err := repo.ClearCart("user2")
+	if err != nil {
+		t.Errorf("Failed to clear existing cart: %v", err)
+	}
+
+	// Verify if the cart was cleared correctly
+	var cart domain.Cart
+	err = db.Preload("Items").Where("username = ?", "user2").First(&cart).Error
+	if err != nil {
+		t.Errorf("Failed to retrieve cart from database: %v", err)
+	}
+	if len(cart.Items) != 0 {
+		t.Errorf("Expected 0 items in cart after clearing, got %d", len(cart.Items))
+	}
+}
+
+func TestClearNonExistingCart(t *testing.T) {
+	_, repo := setupTest(t)
+
+	// Test clearing a non-existing cart
+	err := repo.ClearCart("nonexistent_user")
+	if err == nil {
+		t.Errorf("Expected error when clearing non-existing cart, got nil")
+	}
+}
+
+func TestClearCartWithEmptyUsername(t *testing.T) {
+	_, repo := setupTest(t)
+
+	// Test clearing a cart with empty username
+	err := repo.ClearCart("")
+	if err == nil {
+		t.Errorf("Expected error when clearing cart with empty username, got nil")
+	}
+}
+
+// DA CONTROLLARE DA QUI IN GIU'
+
+func TestCalculateTotalPriceOfExistingCart(t *testing.T) {
+	_, repo := setupTest(t)
+	// Test calculating the total price of an existing cart
+	total, err := repo.CalculateTotalPrice("user1")
+	if err != nil {
+		t.Errorf("Failed to calculate total price of existing cart: %v", err)
+	}
+	expectedTotal := 2*10.0 + 1*20.0 // item1 + item2
+	if total != expectedTotal {
+		t.Errorf("Expected total price %.2f, got %.2f", expectedTotal, total)
+	}
+}
+
+func TestCalculateTotalPriceOfNonExistingCart(t *testing.T) {
+	_, repo := setupTest(t)
+
+	// Test calculating the total price of a non-existing cart
+	_, err := repo.CalculateTotalPrice("nonexistent_user")
+	if err == nil {
+		t.Errorf("Expected error when calculating total price of non-existing cart, got nil")
+	}
+}
+
+func TestCalculateTotalPriceOfCartWithEmptyUsername(t *testing.T) {
+	_, repo := setupTest(t)
+	// Test calculating the total price of a cart with empty username
+	_, err := repo.CalculateTotalPrice("")
+	if err == nil {
+		t.Errorf("Expected error when calculating total price of cart with empty username, got nil")
 	}
 }

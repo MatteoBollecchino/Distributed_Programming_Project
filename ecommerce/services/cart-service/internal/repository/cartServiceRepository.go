@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+
 	//"log"
 
 	"google.golang.org/grpc/codes"
@@ -67,7 +68,7 @@ func (r *CartServiceRepository) RemoveItemFromCart(username string, itemID strin
 
 	// Retrieve the cart of the user from the database
 	found, cart, err := r.RetrieveCart(username)
-	if err != nil {
+	if err != nil && found {
 		return err
 	}
 
@@ -85,10 +86,8 @@ func (r *CartServiceRepository) RemoveItemFromCart(username string, itemID strin
 	}
 
 	// Remove the item from the cart
-	cart.Items = append(cart.Items[:itemIndex], cart.Items[itemIndex+1:]...)
-
-	// Save the updated cart back to the database
-	err = r.db.Session(&gorm.Session{FullSaveAssociations: true}).Save(cart).Error
+	item := cart.Items[itemIndex]
+	err = r.db.Where("cart_username = ? AND item_id = ?", item.CartUsername, item.ItemID).Delete(&domain.CartItem{}).Error
 	if err != nil {
 		return err
 	}
@@ -101,7 +100,7 @@ func (r *CartServiceRepository) UpdateItemQuantity(username string, itemID strin
 
 	// Retrieve the cart of the user from the database
 	found, cart, err := r.RetrieveCart(username)
-	if err != nil {
+	if err != nil && found {
 		return err
 	}
 
@@ -134,7 +133,7 @@ func (r *CartServiceRepository) GetCart(username string) (*pb.Cart, error) {
 
 	// Retrieve the cart of the user from the database
 	found, cart, err := r.RetrieveCart(username)
-	if err != nil {
+	if err != nil && found {
 		return nil, err
 	}
 
@@ -156,8 +155,8 @@ func (r *CartServiceRepository) GetCart(username string) (*pb.Cart, error) {
 func (r *CartServiceRepository) ClearCart(username string) error {
 
 	// Retrieve the cart of the user from the database
-	found, cart, err := r.RetrieveCart(username)
-	if err != nil {
+	found, _, err := r.RetrieveCart(username)
+	if err != nil && found {
 		return err
 	}
 
@@ -167,10 +166,7 @@ func (r *CartServiceRepository) ClearCart(username string) error {
 	}
 
 	// Clear all items from the cart
-	cart.Items = []domain.CartItem{}
-
-	// Save the updated cart back to the database
-	err = r.db.Session(&gorm.Session{FullSaveAssociations: true}).Save(cart).Error
+	err = r.db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&domain.CartItem{}).Error
 	if err != nil {
 		return err
 	}
@@ -183,7 +179,7 @@ func (r *CartServiceRepository) CalculateTotalPrice(username string) (float64, e
 
 	// Retrieve the cart of the user from the database
 	found, cart, err := r.RetrieveCart(username)
-	if err != nil {
+	if err != nil && found {
 		return 0.0, err
 	}
 
