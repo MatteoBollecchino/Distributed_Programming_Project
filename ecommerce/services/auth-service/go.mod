@@ -5,7 +5,7 @@ go 1.25.1
 replace github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto => ../../proto
 
 require (
-	github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto v0.0.0-20260114191157-b383f191a376
+	github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto v0.0.0-20260118165007-b7a0cfe48df0
 	github.com/mattn/go-sqlite3 v1.14.33 // indirect
 	golang.org/x/crypto v0.47.0
 )
