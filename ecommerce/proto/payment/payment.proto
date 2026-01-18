@@ -1,0 +1,59 @@
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package payment;
+
+// folder in which all the generated go files will be stored
+option go_package = "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/payment;payment";
+
+enum PaymentStatus {
+    PENDING_PAYMENT = 0;
+	PAID = 1;
+	PAYMENT_FAILED = 2;
+}
+
+message Payment {
+  string order_id = 1;
+  double amount = 2;
+  PaymentStatus status = 3;
+}
+
+// PROCESS PAYMENT
+message ProcessPaymentRequest {
+  string order_id = 1;
+  double amount = 2;
+}
+
+message ProcessPaymentResponse {
+  Payment payment = 1;
+  string error_message = 2;
+}
+
+// GET STATUS PAYMENT
+message GetPaymentStatusRequest {
+  string order_id = 1;
+}
+
+message GetPaymentStatusResponse {
+  PaymentStatus status = 1;
+  string error_message = 2;
+}
+
+// SERVICES
+service PaymentService {
+  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
+  rpc GetPaymentStatus(GetPaymentStatusRequest) returns (GetPaymentStatusResponse);
+}
