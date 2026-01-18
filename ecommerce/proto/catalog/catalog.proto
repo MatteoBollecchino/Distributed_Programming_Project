@@ -1,0 +1,95 @@
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package catalog;
+
+// folder in which all the generated go files will be stored
+option go_package = "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/catalog;catalog";
+
+// CATALOG ITEM
+message CatalogItem{
+	string item_id = 1;
+	string description = 2;
+	uint32 quantity_available = 3;
+    double price = 4;
+}
+
+// ADD ITEM TO CATALOG
+message AddCatalogItemRequest {
+    CatalogItem item = 1;
+}
+
+message AddCatalogItemResponse {
+    string error_message = 1;
+}
+
+// REMOVE ITEM FROM CATALOG
+message RemoveCatalogItemRequest {
+    string item_id = 1;
+}
+
+message RemoveCatalogItemResponse {
+    string error_message = 1;
+}
+
+// GET ITEM FROM CATALOG
+message GetCatalogItemRequest{
+    string item_id = 1;
+}
+
+message GetCatalogItemResponse{
+    CatalogItem item = 1;
+    string error_message = 2;
+}
+
+// UPDATE ITEM QUANTITY
+message UpdateQuantityAvailableRequest {
+    string item_id = 1;
+    uint32 quantity = 2;
+}
+
+message UpdateQuantityAvailableResponse {
+    string error_message = 1;
+}
+
+// UPDATE ITEM PRICE 
+message UpdatePriceRequest {
+    string item_id = 1;
+    double price = 2;
+}
+
+message UpdatePriceResponse {
+    string error_message = 1;
+}
+
+// LISTING CATALOG
+message ListCatalogItemsRequest {
+}
+
+message ListCatalogItemsResponse {
+    repeated CatalogItem items = 1;
+    string error_message = 2;
+}
+
+// SERVICES
+service CatalogService {
+    rpc AddCatalogItem(AddCatalogItemRequest) returns (AddCatalogItemResponse);
+    rpc RemoveCatalogItem(RemoveCatalogItemRequest) returns (RemoveCatalogItemResponse);
+    rpc GetCatalogItem(GetCatalogItemRequest) returns (GetCatalogItemResponse);
+    rpc UpdateQuantityAvailable(UpdateQuantityAvailableRequest) returns (UpdateQuantityAvailableResponse);
+    rpc UpdatePrice(UpdatePriceRequest) returns (UpdatePriceResponse);
+    rpc ListCatalogItems(ListCatalogItemsRequest) returns (ListCatalogItemsResponse);
+}
