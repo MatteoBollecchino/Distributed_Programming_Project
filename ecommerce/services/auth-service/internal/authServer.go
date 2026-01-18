@@ -7,6 +7,8 @@ import (
 	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/auth-service/internal/domain"
 )
 
+// DA MIGLIORARE CON MAGGIORI CONTROLLI SUGLI ERRORI
+
 // AuthServer implements the authentication service gRPC server.
 type AuthServer struct {
 	pb.AuthenticationServiceServer
@@ -59,6 +61,5 @@ func (s *AuthServer) GetAllUsers(ctx context.Context, req *pb.GetAllUsersRequest
 	if err != nil {
 		return &pb.GetAllUsersResponse{Users: nil, ErrorMessage: err.Error()}, err
 	}
-
 	return &pb.GetAllUsersResponse{Users: users}, nil
 }

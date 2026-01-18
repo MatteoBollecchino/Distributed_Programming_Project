@@ -1,8 +1,5 @@
 package main
 
-// We need to import the driver for SQLite
-// to use GORM
-
 import (
 	"log"
 	"net"
@@ -51,17 +48,10 @@ func main() {
 	grpcServer := grpc.NewServer()
 	pb.RegisterAuthenticationServiceServer(grpcServer, authServer)
 
-	/*
-		// gRPC Health Server
-		healthServer := health.NewServer()
-		healthServer.SetServingStatus("auth.AuthenticationService", healthpb.HealthCheckResponse_SERVING)
-		healthpb.RegisterHealthServer(grpcServer, healthServer)
-	*/
-
 	log.Printf("Auth service listening on port %s", port)
 
 	// Start serving
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("gRPC user server failed: %v", err)
+		log.Fatalf("gRPC user service failed: %v", err)
 	}
 }

@@ -21,6 +21,7 @@ func NewCartServiceRepository(db *gorm.DB) *CartServiceRepository {
 	return &CartServiceRepository{db: db}
 }
 
+// AddItemToCart adds an item to the cart of a specific user.
 func (r *CartServiceRepository) AddItemToCart(username string, item *pb.CartItem) error {
 
 	// Retrieve the cart of the user from the database

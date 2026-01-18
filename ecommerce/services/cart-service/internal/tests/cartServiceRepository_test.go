@@ -569,12 +569,14 @@ func TestClearCartWithEmptyUsername(t *testing.T) {
 
 func TestCalculateTotalPriceOfExistingCart(t *testing.T) {
 	_, repo := setupTest(t)
+
 	// Test calculating the total price of an existing cart
-	total, err := repo.CalculateTotalPrice("user1")
+	total, err := repo.CalculateTotalPrice("user2")
 	if err != nil {
 		t.Errorf("Failed to calculate total price of existing cart: %v", err)
 	}
-	expectedTotal := 2*10.0 + 1*20.0 // item1 + item2
+
+	expectedTotal := 5*5.0 + 2*15.0 // item3 + item4
 	if total != expectedTotal {
 		t.Errorf("Expected total price %.2f, got %.2f", expectedTotal, total)
 	}
@@ -592,6 +594,7 @@ func TestCalculateTotalPriceOfNonExistingCart(t *testing.T) {
 
 func TestCalculateTotalPriceOfCartWithEmptyUsername(t *testing.T) {
 	_, repo := setupTest(t)
+
 	// Test calculating the total price of a cart with empty username
 	_, err := repo.CalculateTotalPrice("")
 	if err == nil {
