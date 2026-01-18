@@ -7,8 +7,6 @@ import (
 	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/auth-service/internal/domain"
 )
 
-// DA MIGLIORARE CON MAGGIORI CONTROLLI SUGLI ERRORI
-
 // AuthServer implements the authentication service gRPC server.
 type AuthServer struct {
 	pb.AuthenticationServiceServer
