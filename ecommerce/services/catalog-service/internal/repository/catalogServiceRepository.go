@@ -64,6 +64,11 @@ func (r *CatalogServiceRepository) AddCatalogItem(item *pb.CatalogItem) error {
 // RemoveCatalogItem removes a catalog item from the catalog by its unique identifier.
 func (r *CatalogServiceRepository) RemoveCatalogItem(itemID string) error {
 
+	// Check ItemID validity
+	if err := checkItemIDValidity(itemID); err != nil {
+		return err
+	}
+
 	// Retrieve item from catalog
 	item, err := r.RetrieveCatalogItem(itemID)
 	if err != nil {
@@ -81,6 +86,11 @@ func (r *CatalogServiceRepository) RemoveCatalogItem(itemID string) error {
 // GetCatalogItem retrieves a catalog item by its unique identifier.
 func (r *CatalogServiceRepository) GetCatalogItem(itemID string) (*pb.CatalogItem, error) {
 
+	// Check ItemID validity
+	if err := checkItemIDValidity(itemID); err != nil {
+		return nil, err
+	}
+
 	// Retrieve item from catalog
 	item, err := r.RetrieveCatalogItem(itemID)
 	if err != nil {
@@ -96,13 +106,27 @@ func (r *CatalogServiceRepository) GetCatalogItem(itemID string) (*pb.CatalogIte
 // UpdateQuantityAvailable updates the quantity available of a catalog item.
 func (r *CatalogServiceRepository) UpdateQuantityAvailable(itemID string, quantity uint32) error {
 
+	// Check ItemID validity
+	if err := checkItemIDValidity(itemID); err != nil {
+		return err
+	}
+
 	// Check quantity validity
+	if err := checkQuantityAvailableValidity(quantity); err != nil {
+		return err
+	}
 
 	// Retrieve item
+	item, err := r.RetrieveCatalogItem(itemID)
+	if err != nil {
+		return err
+	}
 
 	// If the item exists, update its quantity available
-
-	// else return error
+	item.QuantityAvailable = quantity
+	if err := r.db.Save(item).Error; err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -110,12 +134,27 @@ func (r *CatalogServiceRepository) UpdateQuantityAvailable(itemID string, quanti
 // UpdatePrice updates the price of a catalog item.
 func (r *CatalogServiceRepository) UpdatePrice(itemID string, price float64) error {
 
+	// Check ItemID validity
+	if err := checkItemIDValidity(itemID); err != nil {
+		return err
+	}
+
 	// Check price validity
+	if err := checkPriceValidity(price); err != nil {
+		return err
+	}
 
 	// Retrieve item
+	item, err := r.RetrieveCatalogItem(itemID)
+	if err != nil {
+		return err
+	}
 
 	// If the item exists, update its price
-	// else return error
+	item.Price = price
+	if err := r.db.Save(item).Error; err != nil {
+		return err
+	}
 
 	return nil
 }

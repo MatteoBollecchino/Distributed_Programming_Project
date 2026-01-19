@@ -248,3 +248,154 @@ func TestGetCatalogItemInvalidID(t *testing.T) {
 		t.Errorf("Expected error: %v, but got none", err)
 	}
 }
+
+func TestUpdateQuantityAvailableValid(t *testing.T) {
+	db, repo := setupTest(t)
+
+	err := repo.UpdateQuantityAvailable("item123", 25)
+	if err != nil {
+		t.Errorf("Failed to update quantity available: %v", err)
+	}
+
+	var item domain.CatalogItem
+	err = db.Where("item_id = ?", "item123").First(&item).Error
+	if err != nil {
+		t.Errorf("Failed to retrieve updated item: %v", err)
+	}
+	if item.QuantityAvailable != 25 {
+		t.Errorf("Quantity available not updated correctly: got %v, want %v", item.QuantityAvailable, 25)
+	}
+}
+
+func TestUpdateQuantityAvailableInvalid(t *testing.T) {
+	db, repo := setupTest(t)
+
+	err := repo.UpdateQuantityAvailable("item123", 0)
+	if err == nil {
+		t.Errorf("Expected error: %v, but got none", err)
+	}
+
+	var item domain.CatalogItem
+	err = db.Where("item_id = ?", "item123").First(&item).Error
+	if err != nil {
+		t.Errorf("Failed to retrieve item after invalid update attempt: %v", err)
+	}
+	if item.QuantityAvailable != 10 {
+		t.Errorf("Quantity available should not be updated on invalid input: got %v, want %v", item.QuantityAvailable, 10)
+	}
+}
+
+func TestUpdateQuantityAvailableInvalidID(t *testing.T) {
+	_, repo := setupTest(t)
+
+	err := repo.UpdateQuantityAvailable("", 15)
+	if err == nil {
+		t.Errorf("Expected error: %v, but got none", err)
+	}
+}
+
+func TestUpdateQuantityAvailableNonExistingItem(t *testing.T) {
+	_, repo := setupTest(t)
+
+	err := repo.UpdateQuantityAvailable("nonexistent_item", 15)
+	if err == nil {
+		t.Errorf("Expected error: %v but got none", err)
+	}
+}
+
+func TestUpdatePriceValid(t *testing.T) {
+	db, repo := setupTest(t)
+
+	err := repo.UpdatePrice("item123", 79.99)
+	if err != nil {
+		t.Errorf("Failed to update price: %v", err)
+	}
+
+	var item domain.CatalogItem
+	err = db.Where("item_id = ?", "item123").First(&item).Error
+	if err != nil {
+		t.Errorf("Failed to retrieve updated item: %v", err)
+	}
+	if item.Price != 79.99 {
+		t.Errorf("Price not updated correctly: got %v, want %v", item.Price, 79.99)
+	}
+}
+
+func TestUpdatePriceInvalid(t *testing.T) {
+	db, repo := setupTest(t)
+
+	err := repo.UpdatePrice("item123", -10.00)
+	if err == nil {
+		t.Errorf("Expected error: %v, but got none", err)
+	}
+
+	var item domain.CatalogItem
+	err = db.Where("item_id = ?", "item123").First(&item).Error
+	if err != nil {
+		t.Errorf("Failed to retrieve item after invalid update attempt: %v", err)
+	}
+	if item.Price != 99.99 {
+		t.Errorf("Price should not be updated on invalid input: got %v, want %v", item.Price, 99.99)
+	}
+}
+
+func TestUpdatePriceInvalidID(t *testing.T) {
+	_, repo := setupTest(t)
+
+	err := repo.UpdatePrice("", 49.99)
+	if err == nil {
+		t.Errorf("Expected error: %v, but got none", err)
+	}
+}
+
+func TestUpdatePriceNonExistingItem(t *testing.T) {
+	_, repo := setupTest(t)
+
+	err := repo.UpdatePrice("nonexistent_item", 49.99)
+	if err == nil {
+		t.Errorf("Expected error: %v but got none", err)
+	}
+}
+
+func TestListCatalogItems(t *testing.T) {
+	_, repo := setupTest(t)
+
+	items, err := repo.ListCatalogItems()
+	if err != nil {
+		t.Errorf("Failed to list catalog items: %v", err)
+	}
+	if len(items) != 2 {
+		t.Errorf("Expected 2 catalog items, got %v", len(items))
+	}
+
+	expectedItems := map[string]*pb.CatalogItem{
+		"item123": {
+			ItemId:            "item123",
+			Description:       "Default Item",
+			QuantityAvailable: 10,
+			Price:             99.99,
+		},
+		"item456": {
+			ItemId:            "item456",
+			Description:       "Another Item",
+			QuantityAvailable: 5,
+			Price:             49.99,
+		},
+	}
+	for _, item := range items {
+		expectedItem, exists := expectedItems[item.ItemId]
+		if !exists {
+			t.Errorf("Unexpected item ID: %v", item.ItemId)
+			continue
+		}
+		if item.Description != expectedItem.Description {
+			t.Errorf("Item description mismatch for %v: got %v, want %v", item.ItemId, item.Description, expectedItem.Description)
+		}
+		if item.QuantityAvailable != expectedItem.QuantityAvailable {
+			t.Errorf("Item quantity mismatch for %v: got %v, want %v", item.ItemId, item.QuantityAvailable, expectedItem.QuantityAvailable)
+		}
+		if item.Price != expectedItem.Price {
+			t.Errorf("Item price mismatch for %v: got %v, want %v", item.ItemId, item.Price, expectedItem.Price)
+		}
+	}
+}
