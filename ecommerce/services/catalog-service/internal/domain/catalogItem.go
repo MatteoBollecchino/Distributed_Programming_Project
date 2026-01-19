@@ -1,35 +1,36 @@
 package domain
 
+import (
+	"fmt"
+
+	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/catalog"
+)
+
 type CatalogItem struct {
 
 	// ItemID is the unique identifier for the catalog item.
-	ItemID string
+	ItemID string `gorm:"primaryKey;not null; check:item_id <> ''"`
 
 	// Description provides details about the catalog item.
-	Description string
+	Description string `gorm:"not null; check:description <> ''"`
 
 	// QuantityAvailable indicates how many units of the item are available in stock.
-	QuantityAvailable uint32
+	QuantityAvailable uint32 `gorm:"not null; check:quantity_available > 0"`
 
 	// Price indicates the price of the catalog item.
-	Price float64
+	Price float64 `gorm:"not null; check:price >= 0"`
 }
 
-/*
-// DomainUserToProtoUser converts a model.User into a pb.User
-func DomainUserToProtoUser(user *User) (*pb.User, error) {
-	if user == nil {
+// DomainCatalogItemToProtoCatalogItem converts a model.CatalogItem into a pb.CatalogItem
+func DomainCatalogItemToProtoCatalogItem(item *CatalogItem) (*pb.CatalogItem, error) {
+	if item == nil {
 		return nil, fmt.Errorf("Input argument is nil")
 	}
 
-	var r pb.Role
-	if user.Role == AdminRole {
-		r = pb.Role_ADMIN
-	} else {
-		r = pb.Role_USER
-	}
-	return &pb.User{
-		Username: user.Username,
-		Password: user.Password,
-		Role:     r}, nil
-}*/
+	return &pb.CatalogItem{
+		ItemId:            item.ItemID,
+		Description:       item.Description,
+		QuantityAvailable: item.QuantityAvailable,
+		Price:             item.Price,
+	}, nil
+}

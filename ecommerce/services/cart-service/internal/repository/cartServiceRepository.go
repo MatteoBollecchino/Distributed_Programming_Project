@@ -3,8 +3,6 @@ package repository
 import (
 	"errors"
 
-	//"log"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
