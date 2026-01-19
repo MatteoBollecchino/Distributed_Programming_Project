@@ -10,19 +10,19 @@ type Status string
 
 const (
 	// Pending indicates that the order has been created but not yet processed.
-	Pending Status = "Pending"
+	Pending Status = "PENDING"
 
 	// Processing indicates that the order is currently being processed.
-	Processing Status = "Processing"
+	Processing Status = "PROCESSING"
 
 	// Shipped indicates that the order has been shipped to the customer.
-	Shipped Status = "Shipped"
+	Shipped Status = "SHIPPED"
 
 	// Delivered indicates that the order has been delivered to the customer.
-	Delivered Status = "Delivered"
+	Delivered Status = "DELIVERED"
 
 	// Canceled indicates that the order has been canceled.
-	Canceled Status = "Canceled"
+	Canceled Status = "CANCELED"
 )
 
 type Order struct {
