@@ -28,13 +28,13 @@ const (
 type Order struct {
 
 	// OrderID is the unique identifier for the order.
-	OrderID string `gorm:"primaryKey;not null; check:order_id <> ''"`
+	OrderID string `gorm:"primaryKey; not null; check:order_id <> ''"`
 
 	// UserID is the unique identifier for the user who placed the order.
 	UserID string `gorm:"not null; check:user_id <> ''"`
 
 	// ItemIDs is a list of unique identifiers for the items included in the order.
-	Items []OrderItem `gorm:"type:text[];not null; check:array_length(item_ids, 1) > 0"`
+	Items []OrderItem `gorm:"foreignKey:ItemID;references:OrderID;constraint:OnDelete:CASCADE;not null"`
 
 	// Status indicates the current status of the order (e.g., "Pending", "Shipped", "Delivered").
 	Status Status `gorm:"not null; check:status <> ''"`

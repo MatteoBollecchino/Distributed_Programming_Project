@@ -1,19 +1,134 @@
 package repository
 
-/*
 import (
 	"errors"
 
+	ulid "github.com/oklog/ulid/v2"
 	"gorm.io/gorm"
 
-	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/catalog"
-	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/catalog-service/internal/domain"
+	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/order"
+	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/order-service/internal/domain"
 )
 
-type CatalogServiceRepository struct {
+type OrderServiceRepository struct {
 	db *gorm.DB
 }
 
-func NewCatalogServiceRepository(db *gorm.DB) *CatalogServiceRepository {
-	return &CatalogServiceRepository{db: db}
+func NewOrderServiceRepository(db *gorm.DB) *OrderServiceRepository {
+	return &OrderServiceRepository{db: db}
+}
+
+// CreateOrder creates a new order in the database.
+func (r *OrderServiceRepository) CreateOrder(userID string, items []*pb.OrderItem) error {
+
+	// Validate UserID
+	if err := checkValidID(userID); err != nil {
+		return err
+	}
+
+	// Validate List of Order Items
+	if len(items) == 0 {
+		return errors.New("order must contain at least one item")
+	}
+	for _, item := range items {
+		if err := checkValidID(item.ItemId); err != nil {
+			return err
+		}
+		if item.Quantity == 0 {
+			return errors.New("item quantity must be greater than zero")
+		}
+		if item.Price < 0 {
+			return errors.New("item price cannot be negative")
+		}
+	}
+
+	// Check Order Uniqueness
+	orderID := ulid.Make().String()
+	if err := checkOrderUniqueness(r.db, orderID); err != nil {
+		return err
+	}
+
+	// Create Order
+	orderItems := make([]domain.OrderItem, len(items))
+	for i, item := range items {
+		orderItems[i] = domain.OrderItem{
+			ItemID:   item.ItemId,
+			Quantity: item.Quantity,
+			Price:    item.Price,
+		}
+	}
+	order := &domain.Order{
+		OrderID: orderID,
+		UserID:  userID,
+		Items:   orderItems,
+		Status:  domain.Pending,
+	}
+
+	// Save Order to Database
+	if err := r.db.Create(order).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+/*
+// UpdateOrderStatus updates the status of an existing order.
+func (r *OrderServiceRepository) UpdateOrderStatus(orderID string, status domain.Status) error {
+	result := r.db.Model(&domain.Order{}).Where("order_id = ?", orderID).Update("status", status)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("order not found")
+	}
+	return nil
+}
+
+// GetOrder retrieves an order by its unique identifier.
+func (r *OrderServiceRepository) GetOrder(orderID string) (*domain.Order, error) {
+	var order domain.Order
+	if err := r.db.Where("order_id = ?", orderID).First(&order).Error; err != nil {
+		return nil, err
+	}
+	return &order, nil
+}
+
+// GetOrderPrice retrieves the total price of an order by its unique identifier.
+func (r *OrderServiceRepository) GetOrderPrice(orderID string) (float64, error) {
+	var order domain.Order
+	if err := r.db.Where("order_id = ?", orderID).First(&order).Error; err != nil {
+		return 0, err
+	}
+	var totalPrice float64
+	for _, item := range order.Items {
+		totalPrice += float64(item.Quantity) * item.Price
+	}
+	return totalPrice, nil
+}
+
+// ListOrdersByUser retrieves all orders associated with a specific user.
+func (r *OrderServiceRepository) ListOrdersByUser(userID string) ([]*domain.Order, error) {
+	var orders []*domain.Order
+	if err := r.db.Where("user_id = ?", userID).Find(&orders).Error; err != nil {
+		return nil, err
+	}
+	return orders, nil
 }*/
+
+// PRIVATE FUNCTIONS TO CHECK ON THE VALIDITY OF INPUTS
+
+func checkValidID(id string) error {
+	if id == "" {
+		return errors.New("Invalid ID: cannot be empty")
+	}
+	return nil
+}
+
+func checkOrderUniqueness(db *gorm.DB, orderID string) error {
+	var count int64
+	db.Model(&domain.Order{}).Where("order_id = ?", orderID).Count(&count)
+	if count > 0 {
+		return errors.New("Order ID already exists")
+	}
+	return nil
+}

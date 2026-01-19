@@ -5,7 +5,7 @@ import pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerc
 type OrderServiceInterface interface {
 
 	// CreateOrder creates a new order with the provided details.
-	CreateOrder(userID string, items []pb.OrderItem) error
+	CreateOrder(userID string, items []*pb.OrderItem) error
 
 	// UpdateOrderStatus updates the status of an order by its unique identifier.
 	UpdateOrderStatus(orderID string, status Status) error
