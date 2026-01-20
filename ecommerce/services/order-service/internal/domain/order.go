@@ -37,7 +37,7 @@ type Order struct {
 	Items []OrderItem `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnDelete:CASCADE;not null"`
 
 	// Status indicates the current status of the order (e.g., "Pending", "Shipped", "Delivered").
-	Status Status `gorm:"not null; check:status <> ''"`
+	Status Status `gorm:"not null; check:status in ('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELED')"`
 }
 
 // DomainOrderToProtoOrder converts a model.Order into a pb.Order

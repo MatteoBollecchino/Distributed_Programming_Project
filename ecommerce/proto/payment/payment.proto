@@ -20,7 +20,7 @@ package payment;
 option go_package = "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/payment;payment";
 
 enum PaymentStatus {
-    PENDING_PAYMENT = 0;
+  PENDING_PAYMENT = 0;
 	PAID = 1;
 	PAYMENT_FAILED = 2;
 }
@@ -31,15 +31,23 @@ message Payment {
   PaymentStatus status = 3;
 }
 
-// PROCESS PAYMENT
-message ProcessPaymentRequest {
+// CREATE PAYMENT
+message CreatePaymentRequest {
   string order_id = 1;
   double amount = 2;
 }
 
+message CreatePaymentResponse {
+  string error_message = 1;
+}
+
+// PROCESS PAYMENT
+message ProcessPaymentRequest {
+  string order_id = 1;
+}
+
 message ProcessPaymentResponse {
-  Payment payment = 1;
-  string error_message = 2;
+  string error_message = 1;
 }
 
 // GET STATUS PAYMENT
@@ -54,6 +62,7 @@ message GetPaymentStatusResponse {
 
 // SERVICES
 service PaymentService {
+  rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentResponse);
   rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
   rpc GetPaymentStatus(GetPaymentStatusRequest) returns (GetPaymentStatusResponse);
 }
