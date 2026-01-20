@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"log"
 	"testing"
 
 	ulid "github.com/oklog/ulid/v2"
@@ -123,11 +122,180 @@ func TestCreateNewOrderToExistingUser(t *testing.T) {
 	if err := db.Preload("Items").Where("user_id = ?", "user123").Find(&orders).Error; err != nil {
 		t.Fatalf("Failed to query orders: %v", err)
 	}
-	log.Println(orders[0].Items[0].ItemID)
 	if len(orders) != 2 {
 		t.Fatalf("Expected 2 orders, got %d", len(orders))
 	}
 	if len(orders[1].Items) != 1 {
 		t.Fatalf("Expected 1 item in the order, got %d", len(orders[1].Items))
+	}
+}
+
+func TestCreateOrderWithInvalidUserID(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test creating an order with empty userID
+	err := repo.CreateOrder("", []*pb.OrderItem{
+		{ItemId: "item444", Quantity: 1, Price: 19.99},
+	})
+	if err == nil {
+		t.Fatalf("Expected error for empty userID, got nil")
+	}
+
+	// Verify no order was created
+	var orders []domain.Order
+	if err := db.Preload("Items").Where("user_id = ?", "").Find(&orders).Error; err != nil {
+		t.Fatalf("Failed to query orders: %v", err)
+	}
+	if len(orders) != 0 {
+		t.Fatalf("Expected 0 orders, got %d", len(orders))
+	}
+}
+
+func TestCreateOrderWithEmptyItems(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test creating an order with empty items
+	err := repo.CreateOrder("user999", []*pb.OrderItem{})
+	if err == nil {
+		t.Fatalf("Expected error for empty items, got nil")
+	}
+
+	// Verify no order was created
+	var orders []domain.Order
+	if err := db.Preload("Items").Where("user_id = ?", "user999").Find(&orders).Error; err != nil {
+		t.Fatalf("Failed to query orders: %v", err)
+	}
+	if len(orders) != 0 {
+		t.Fatalf("Expected 0 orders, got %d", len(orders))
+	}
+}
+
+func TestCreateOrderWithInvalidItemID(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test creating an order with an invalid itemID
+	err := repo.CreateOrder("user888", []*pb.OrderItem{
+		{ItemId: "", Quantity: 2, Price: 29.99},
+	})
+	if err == nil {
+		t.Fatalf("Expected error for invalid itemID, got nil")
+	}
+
+	// Verify no order was created
+	var orders []domain.Order
+	if err := db.Preload("Items").Where("user_id = ?", "user888").Find(&orders).Error; err != nil {
+		t.Fatalf("Failed to query orders: %v", err)
+	}
+	if len(orders) != 0 {
+		t.Fatalf("Expected 0 orders, got %d", len(orders))
+	}
+}
+
+func TestCreateOrderWithInvalidQuantity(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test creating an order with an invalid quantity
+	err := repo.CreateOrder("user777", []*pb.OrderItem{
+		{ItemId: "item555", Quantity: 0, Price: 39.99},
+	})
+	if err == nil {
+		t.Fatalf("Expected error for invalid quantity, got nil")
+	}
+
+	// Verify no order was created
+	var orders []domain.Order
+	if err := db.Preload("Items").Where("user_id = ?", "user777").Find(&orders).Error; err != nil {
+		t.Fatalf("Failed to query orders: %v", err)
+	}
+	if len(orders) != 0 {
+		t.Fatalf("Expected 0 orders, got %d", len(orders))
+	}
+}
+
+func TestCreateOrderWithInvalidPrice(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Test creating an order with an invalid price
+	err := repo.CreateOrder("user666", []*pb.OrderItem{
+		{ItemId: "item666", Quantity: 2, Price: -10.00},
+	})
+	if err == nil {
+		t.Fatalf("Expected error for invalid price, got nil")
+	}
+
+	// Verify no order was created
+	var orders []domain.Order
+	if err := db.Preload("Items").Where("user_id = ?", "user666").Find(&orders).Error; err != nil {
+		t.Fatalf("Failed to query orders: %v", err)
+	}
+	if len(orders) != 0 {
+		t.Fatalf("Expected 0 orders, got %d", len(orders))
+	}
+}
+
+func TestUpdateOrderStatusValid(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Get an existing order
+	var order domain.Order
+	if err := db.Preload("Items").Where("user_id = ?", "user456").First(&order).Error; err != nil {
+		t.Fatalf("Failed to get existing order: %v", err)
+	}
+
+	// Update order status
+	err := repo.UpdateOrderStatus(order.OrderID, domain.Shipped)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	// Verify the status was updated
+	var updatedOrder domain.Order
+	if err := db.Where("order_id = ?", order.OrderID).First(&updatedOrder).Error; err != nil {
+		t.Fatalf("Failed to get updated order: %v", err)
+	}
+	if updatedOrder.Status != domain.Shipped {
+		t.Fatalf("Expected status %v, got %v", domain.Shipped, updatedOrder.Status)
+	}
+}
+
+func TestUpdateOrderStatusInvalidID(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Attempt to update status with invalid orderID
+	err := repo.UpdateOrderStatus("", domain.Delivered)
+	if err == nil {
+		t.Fatalf("Expected error for invalid orderID, got nil")
+	}
+
+	// Verify no order was updated
+	var orders []domain.Order
+	if err := db.Preload("Items").Find(&orders).Error; err != nil {
+		t.Fatalf("Failed to query orders: %v", err)
+	}
+	for _, order := range orders {
+		if order.Status == domain.Delivered {
+			t.Fatalf("Expected no orders to be updated to Delivered status")
+		}
+	}
+}
+
+func TestUpdateOrderStatusNonExistentID(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Attempt to update status with non-existent orderID
+	err := repo.UpdateOrderStatus("nonexistentid", domain.Canceled)
+	if err == nil {
+		t.Fatalf("Expected error for non-existent orderID, got nil")
+	}
+
+	// Verify no order was updated
+	var orders []domain.Order
+	if err := db.Preload("Items").Find(&orders).Error; err != nil {
+		t.Fatalf("Failed to query orders: %v", err)
+	}
+	for _, order := range orders {
+		if order.Status == domain.Canceled {
+			t.Fatalf("Expected no orders to be updated to Canceled status")
+		}
 	}
 }

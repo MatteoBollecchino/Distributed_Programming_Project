@@ -71,9 +71,15 @@ func (r *OrderServiceRepository) CreateOrder(userID string, items []*pb.OrderIte
 	return nil
 }
 
-/*
 // UpdateOrderStatus updates the status of an existing order.
 func (r *OrderServiceRepository) UpdateOrderStatus(orderID string, status domain.Status) error {
+
+	// Validate OrderID
+	if err := checkValidID(orderID); err != nil {
+		return err
+	}
+
+	// Update Status in Database
 	result := r.db.Model(&domain.Order{}).Where("order_id = ?", orderID).Update("status", status)
 	if result.Error != nil {
 		return result.Error
@@ -93,6 +99,7 @@ func (r *OrderServiceRepository) GetOrder(orderID string) (*domain.Order, error)
 	return &order, nil
 }
 
+/*
 // GetOrderPrice retrieves the total price of an order by its unique identifier.
 func (r *OrderServiceRepository) GetOrderPrice(orderID string) (float64, error) {
 	var order domain.Order
@@ -117,6 +124,7 @@ func (r *OrderServiceRepository) ListOrdersByUser(userID string) ([]*domain.Orde
 
 // PRIVATE FUNCTIONS TO CHECK ON THE VALIDITY OF INPUTS
 
+// checkValidID checks if the provided ID is valid (non-empty).
 func checkValidID(id string) error {
 	if id == "" {
 		return errors.New("Invalid ID: cannot be empty")
@@ -124,6 +132,8 @@ func checkValidID(id string) error {
 	return nil
 }
 
+// checkOrderUniqueness checks if the order ID is unique in the database.
+// Even if orderID is generated to be unique, this function adds an extra layer of safety.
 func checkOrderUniqueness(db *gorm.DB, orderID string) error {
 	var count int64
 	db.Model(&domain.Order{}).Where("order_id = ?", orderID).Count(&count)

@@ -34,22 +34,10 @@ type Order struct {
 	UserID string `gorm:"not null; check:user_id <> ''"`
 
 	// ItemIDs is a list of unique identifiers for the items included in the order.
-	Items []OrderItem `gorm:"foreignKey:ItemID;references:OrderID;constraint:OnDelete:CASCADE;not null"`
+	Items []OrderItem `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnDelete:CASCADE;not null"`
 
 	// Status indicates the current status of the order (e.g., "Pending", "Shipped", "Delivered").
 	Status Status `gorm:"not null; check:status <> ''"`
-}
-
-// DomainOrderItemToProtoOrderItem converts a model.OrderItem into a pb.OrderItem
-func DomainOrderItemToProtoOrderItem(item *OrderItem) (*pb.OrderItem, error) {
-	if item == nil {
-		return nil, fmt.Errorf("Input argument is nil")
-	}
-	return &pb.OrderItem{
-		ItemId:   item.ItemID,
-		Quantity: item.Quantity,
-		Price:    item.Price,
-	}, nil
 }
 
 // DomainOrderToProtoOrder converts a model.Order into a pb.Order
