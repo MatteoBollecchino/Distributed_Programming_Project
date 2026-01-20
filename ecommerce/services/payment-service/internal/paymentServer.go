@@ -1,130 +1,81 @@
 package internal
 
-/*
 import (
 	"context"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/order"
-	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/order-service/internal/domain"
+	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/payment"
+	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/payment-service/internal/domain"
 )
 
-// OrderServer implements the order service gRPC server.
-type OrderServer struct {
-	pb.OrderServiceServer
-	repo domain.OrderServiceInterface
+// PaymentServer implements the payment service gRPC server.
+type PaymentServer struct {
+	pb.PaymentServiceServer
+	repo domain.PaymentServiceInterface
 }
 
-func NewOrderServer(repo domain.OrderServiceInterface) *OrderServer {
-	return &OrderServer{repo: repo}
+func NewPaymentServer(repo domain.PaymentServiceInterface) *PaymentServer {
+	return &PaymentServer{repo: repo}
 }
 
-// CreateOrder creates a new order in the database.
-func (s *OrderServer) CreateOrder(ctx context.Context, req *pb.CreateOrderRequest) (*pb.CreateOrderResponse, error) {
-
-	if req.UserId == "" {
-		return &pb.CreateOrderResponse{
-			ErrorMessage: "User ID must be provided and not empty",
-		}, status.Error(codes.InvalidArgument, "User ID must be provided and not empty")
-	}
-
-	if req.OrderItems == nil {
-		return &pb.CreateOrderResponse{
-			ErrorMessage: "Items list cannot be nil",
-		}, status.Error(codes.InvalidArgument, "Items list cannot be nil")
-	}
-
-	if len(req.OrderItems) == 0 {
-		return &pb.CreateOrderResponse{
-			ErrorMessage: "Order must contain at least one item",
-		}, status.Error(codes.InvalidArgument, "Order must contain at least one item")
-	}
-
-	for _, item := range req.OrderItems {
-		if item.ItemId == "" {
-			return &pb.CreateOrderResponse{
-				ErrorMessage: "Item ID must be provided and not empty",
-			}, status.Error(codes.InvalidArgument, "Item ID must be provided and not empty")
-		}
-		if item.Quantity == 0 {
-			return &pb.CreateOrderResponse{
-				ErrorMessage: "Item quantity must be greater than zero",
-			}, status.Error(codes.InvalidArgument, "Item quantity must be greater than zero")
-		}
-		if item.Price < 0 {
-			return &pb.CreateOrderResponse{
-				ErrorMessage: "Item price cannot be negative",
-			}, status.Error(codes.InvalidArgument, "Item price cannot be negative")
-		}
-	}
-
-	err := s.repo.CreateOrder(req.UserId, req.OrderItems)
-	if err != nil {
-		return &pb.CreateOrderResponse{ErrorMessage: err.Error()}, err
-	}
-	return &pb.CreateOrderResponse{}, nil
-}
-
-// UpdateOrderStatus updates the status of an order by its unique identifier.
-func (s *OrderServer) UpdateOrderStatus(ctx context.Context, req *pb.UpdateOrderStatusRequest) (*pb.UpdateOrderStatusResponse, error) {
+// CreatePayment creates a new payment in the database.
+func (s *PaymentServer) CreatePayment(ctx context.Context, req *pb.CreatePaymentRequest) (*pb.CreatePaymentResponse, error) {
 
 	if req.OrderId == "" {
-		return &pb.UpdateOrderStatusResponse{
+		return &pb.CreatePaymentResponse{
 			ErrorMessage: "Order ID must be provided and not empty",
 		}, status.Error(codes.InvalidArgument, "Order ID must be provided and not empty")
 	}
 
-	err := s.repo.UpdateOrderStatus(req.OrderId, req.Status)
-	if err != nil {
-		return &pb.UpdateOrderStatusResponse{ErrorMessage: err.Error()}, err
+	if req.Amount < 0 {
+		return &pb.CreatePaymentResponse{
+			ErrorMessage: "Amount cannot be negative",
+		}, status.Error(codes.InvalidArgument, "Amount cannot be negative")
 	}
-	return &pb.UpdateOrderStatusResponse{}, nil
+
+	err := s.repo.CreatePayment(req.OrderId, req.Amount)
+	if err != nil {
+		return &pb.CreatePaymentResponse{ErrorMessage: err.Error()}, err
+	}
+	return &pb.CreatePaymentResponse{}, nil
 }
 
-// GetOrder retrieves an order by its unique identifier.
-func (s *OrderServer) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*pb.GetOrderResponse, error) {
+// ProcessPayment processes a payment for a given order ID and amount.
+func (s *PaymentServer) ProcessPayment(ctx context.Context, req *pb.ProcessPaymentRequest) (*pb.ProcessPaymentResponse, error) {
 
 	if req.OrderId == "" {
-		return &pb.GetOrderResponse{
+		return &pb.ProcessPaymentResponse{
 			ErrorMessage: "Order ID must be provided and not empty",
 		}, status.Error(codes.InvalidArgument, "Order ID must be provided and not empty")
 	}
 
-	order, err := s.repo.GetOrder(req.OrderId)
-	if err != nil {
-		return &pb.GetOrderResponse{ErrorMessage: err.Error()}, err
+	if req.Amount < 0 {
+		return &pb.ProcessPaymentResponse{
+			ErrorMessage: "Amount cannot be negative",
+		}, status.Error(codes.InvalidArgument, "Amount cannot be negative")
 	}
-	return &pb.GetOrderResponse{Order: order}, nil
+
+	err := s.repo.ProcessPayment(req.OrderId, req.Amount)
+	if err != nil {
+		return &pb.ProcessPaymentResponse{ErrorMessage: err.Error()}, err
+	}
+	return &pb.ProcessPaymentResponse{}, nil
 }
 
-// GetOrderPrice retrieves the total price of an order by its unique identifier.
-func (s *OrderServer) GetOrderPrice(ctx context.Context, req *pb.GetOrderPriceRequest) (*pb.GetOrderPriceResponse, error) {
+// GetPaymentStatus retrieves the payment status for a given order ID.
+func (s *PaymentServer) GetPaymentStatus(ctx context.Context, req *pb.GetPaymentStatusRequest) (*pb.GetPaymentStatusResponse, error) {
+
 	if req.OrderId == "" {
-		return &pb.GetOrderPriceResponse{
+		return &pb.GetPaymentStatusResponse{
 			ErrorMessage: "Order ID must be provided and not empty",
 		}, status.Error(codes.InvalidArgument, "Order ID must be provided and not empty")
 	}
 
-	totalPrice, err := s.repo.GetOrderPrice(req.OrderId)
+	status, err := s.repo.GetPaymentStatus(req.OrderId)
 	if err != nil {
-		return &pb.GetOrderPriceResponse{ErrorMessage: err.Error()}, err
+		return &pb.GetPaymentStatusResponse{ErrorMessage: err.Error()}, err
 	}
-	return &pb.GetOrderPriceResponse{TotalPrice: totalPrice}, nil
+	return &pb.GetPaymentStatusResponse{Status: status}, nil
 }
-
-// ListOrdersByUser retrieves all orders associated with a specific user.
-func (s *OrderServer) ListOrdersByUser(ctx context.Context, req *pb.ListOrdersByUserRequest) (*pb.ListOrdersByUserResponse, error) {
-	if req.UserId == "" {
-		return &pb.ListOrdersByUserResponse{
-			ErrorMessage: "User ID must be provided and not empty",
-		}, status.Error(codes.InvalidArgument, "User ID must be provided and not empty")
-	}
-
-	orders, err := s.repo.ListOrdersByUser(req.UserId)
-	if err != nil {
-		return &pb.ListOrdersByUserResponse{ErrorMessage: err.Error()}, err
-	}
-	return &pb.ListOrdersByUserResponse{Orders: orders}, nil
-}*/

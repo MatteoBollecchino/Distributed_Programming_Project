@@ -48,9 +48,14 @@ func (r *PaymentServiceRepository) CreatePayment(orderID string, amount float64)
 
 // ProcessPayment processes a payment for a given order ID.
 func (r *PaymentServiceRepository) ProcessPayment(orderID string, amount float64) error {
+
 	// Validate inputs
 	if err := checkValidID(orderID); err != nil {
 		return err
+	}
+
+	if amount < 0 {
+		return errors.New("Invalid amount: cannot be negative")
 	}
 
 	// Retrieve the payment
@@ -59,12 +64,18 @@ func (r *PaymentServiceRepository) ProcessPayment(orderID string, amount float64
 		return err
 	}
 
+	// Check if payment is already PAID
+	if payment.Status == domain.Paid {
+		return errors.New("Payment has already been processed and is marked as PAID")
+	}
+
 	// Simulate payment processing logic
 	if amount >= payment.Amount {
 		payment.Status = domain.Paid
 	} else {
 		payment.Status = domain.PaymentFailed
 	}
+
 	// Update the payment status in the database
 	if err := r.db.Save(&payment).Error; err != nil {
 		return err
@@ -74,10 +85,19 @@ func (r *PaymentServiceRepository) ProcessPayment(orderID string, amount float64
 
 // GetPaymentStatus retrieves the payment status for a given order ID.
 func (r *PaymentServiceRepository) GetPaymentStatus(orderID string) (pb.PaymentStatus, error) {
+
+	// Validate inputs
+	if err := checkValidID(orderID); err != nil {
+		return pb.PaymentStatus(0), err
+	}
+
+	// Retrieve the payment
 	var payment domain.Payment
 	if err := r.db.Where("order_id = ?", orderID).First(&payment).Error; err != nil {
 		return pb.PaymentStatus(0), err
 	}
+
+	// Convert domain payment status to proto payment status
 	protoStatus, err := domain.DomainPaymentStatusToProtoPaymentStatus(payment.Status)
 	if err != nil {
 		return pb.PaymentStatus(0), err
