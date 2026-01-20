@@ -44,6 +44,7 @@ message CreatePaymentResponse {
 // PROCESS PAYMENT
 message ProcessPaymentRequest {
   string order_id = 1;
+  double amount = 2;
 }
 
 message ProcessPaymentResponse {

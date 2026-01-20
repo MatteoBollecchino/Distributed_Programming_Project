@@ -245,6 +245,7 @@ func (x *CreatePaymentResponse) GetErrorMessage() string {
 type ProcessPaymentRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	Amount        float64                `protobuf:"fixed64,2,opt,name=amount,proto3" json:"amount,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -284,6 +285,13 @@ func (x *ProcessPaymentRequest) GetOrderId() string {
 		return x.OrderId
 	}
 	return ""
+}
+
+func (x *ProcessPaymentRequest) GetAmount() float64 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
 }
 
 type ProcessPaymentResponse struct {
@@ -440,9 +448,10 @@ const file_proto_payment_payment_proto_rawDesc = "" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\x01R\x06amount\"<\n" +
 	"\x15CreatePaymentResponse\x12#\n" +
-	"\rerror_message\x18\x01 \x01(\tR\ferrorMessage\"2\n" +
+	"\rerror_message\x18\x01 \x01(\tR\ferrorMessage\"J\n" +
 	"\x15ProcessPaymentRequest\x12\x19\n" +
-	"\border_id\x18\x01 \x01(\tR\aorderId\"=\n" +
+	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\x01R\x06amount\"=\n" +
 	"\x16ProcessPaymentResponse\x12#\n" +
 	"\rerror_message\x18\x01 \x01(\tR\ferrorMessage\"4\n" +
 	"\x17GetPaymentStatusRequest\x12\x19\n" +

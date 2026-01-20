@@ -8,7 +8,7 @@ type PaymentServiceInterface interface {
 	CreatePayment(orderID string, amount float64) error
 
 	// Processes a payment for a given order ID and amount
-	ProcessPayment(orderID string) error
+	ProcessPayment(orderID string, amount float64) error
 
 	// Retrieves the payment status for a given order ID
 	GetPaymentStatus(orderID string) (pb.PaymentStatus, error)
