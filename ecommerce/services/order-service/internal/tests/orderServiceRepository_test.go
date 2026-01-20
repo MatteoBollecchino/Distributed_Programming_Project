@@ -237,20 +237,25 @@ func TestUpdateOrderStatusValid(t *testing.T) {
 	db, repo := setupTest(t)
 
 	// Get an existing order
-	var order domain.Order
-	if err := db.Preload("Items").Where("user_id = ?", "user456").First(&order).Error; err != nil {
+	var domainOrder domain.Order
+	if err := db.Preload("Items").Where("user_id = ?", "user456").First(&domainOrder).Error; err != nil {
 		t.Fatalf("Failed to get existing order: %v", err)
 	}
 
+	order, err := domain.DomainOrderToProtoOrder(&domainOrder)
+	if err != nil {
+		t.Fatalf("Failed to convert domain order to proto order: %v", err)
+	}
+
 	// Update order status
-	err := repo.UpdateOrderStatus(order.OrderID, domain.Shipped)
+	err = repo.UpdateOrderStatus(order.OrderId, pb.OrderStatus_SHIPPED)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
 	// Verify the status was updated
 	var updatedOrder domain.Order
-	if err := db.Where("order_id = ?", order.OrderID).First(&updatedOrder).Error; err != nil {
+	if err := db.Where("order_id = ?", domainOrder.OrderID).First(&updatedOrder).Error; err != nil {
 		t.Fatalf("Failed to get updated order: %v", err)
 	}
 	if updatedOrder.Status != domain.Shipped {
@@ -262,7 +267,7 @@ func TestUpdateOrderStatusInvalidID(t *testing.T) {
 	db, repo := setupTest(t)
 
 	// Attempt to update status with invalid orderID
-	err := repo.UpdateOrderStatus("", domain.Delivered)
+	err := repo.UpdateOrderStatus("", pb.OrderStatus_DELIVERED)
 	if err == nil {
 		t.Fatalf("Expected error for invalid orderID, got nil")
 	}
@@ -283,7 +288,7 @@ func TestUpdateOrderStatusNonExistentID(t *testing.T) {
 	db, repo := setupTest(t)
 
 	// Attempt to update status with non-existent orderID
-	err := repo.UpdateOrderStatus("nonexistentid", domain.Canceled)
+	err := repo.UpdateOrderStatus("nonexistentid", pb.OrderStatus_CANCELED)
 	if err == nil {
 		t.Fatalf("Expected error for non-existent orderID, got nil")
 	}
@@ -297,5 +302,161 @@ func TestUpdateOrderStatusNonExistentID(t *testing.T) {
 		if order.Status == domain.Canceled {
 			t.Fatalf("Expected no orders to be updated to Canceled status")
 		}
+	}
+}
+
+func TestGetOrderValidID(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Get an existing order
+	var existingOrder domain.Order
+	if err := db.Preload("Items").Where("user_id = ?", "user123").First(&existingOrder).Error; err != nil {
+		t.Fatalf("Failed to get existing order: %v", err)
+	}
+
+	retrievedOrder, err := repo.GetOrder(existingOrder.OrderID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if retrievedOrder.OrderId != existingOrder.OrderID {
+		t.Fatalf("Expected order ID %v, got %v", existingOrder.OrderID, retrievedOrder.OrderId)
+	}
+}
+
+func TestGetOrderInvalidID(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Attempt to get order with invalid orderID
+	_, err := repo.GetOrder("")
+	if err == nil {
+		t.Fatalf("Expected error for invalid orderID, got nil")
+	}
+
+	// Verify no order was retrieved
+	var orders []domain.Order
+	if err := db.Preload("Items").Find(&orders).Error; err != nil {
+		t.Fatalf("Failed to query orders: %v", err)
+	}
+	for _, order := range orders {
+		if order.OrderID == "" {
+			t.Fatalf("Expected no orders to be retrieved with empty orderID")
+		}
+	}
+}
+
+func TestGetOrderNonExistentID(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Attempt to get order with non-existent orderID
+	_, err := repo.GetOrder("nonexistentid")
+	if err == nil {
+		t.Fatalf("Expected error for non-existent orderID, got nil")
+	}
+
+	// Verify no order was retrieved
+	var orders []domain.Order
+	if err := db.Preload("Items").Find(&orders).Error; err != nil {
+		t.Fatalf("Failed to query orders: %v", err)
+	}
+	for _, order := range orders {
+		if order.OrderID == "nonexistentid" {
+			t.Fatalf("Expected no orders to be retrieved with non-existent orderID")
+		}
+	}
+}
+
+func TestGetOrderPriceValidID(t *testing.T) {
+	db, repo := setupTest(t)
+
+	// Get an existing order
+	var existingOrder domain.Order
+	if err := db.Preload("Items").Where("user_id = ?", "user123").First(&existingOrder).Error; err != nil {
+		t.Fatalf("Failed to get existing order: %v", err)
+	}
+
+	// Calculate expected total price
+	totalPrice, err := repo.GetOrderPrice(existingOrder.OrderID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	expectedPrice := 0.0
+	for _, item := range existingOrder.Items {
+		expectedPrice += float64(item.Quantity) * item.Price
+	}
+	if totalPrice != expectedPrice {
+		t.Fatalf("Expected total price %v, got %v", expectedPrice, totalPrice)
+	}
+}
+
+func TestGetOrderPriceInvalidID(t *testing.T) {
+	_, repo := setupTest(t)
+
+	// Attempt to get order price with invalid orderID
+	price, err := repo.GetOrderPrice("")
+	if err == nil {
+		t.Fatalf("Expected error for invalid orderID, got nil")
+	}
+	if price != -1 {
+		t.Fatalf("Expected price -1 for invalid orderID, got %v", price)
+	}
+}
+
+func TestGetOrderPriceNonExistentID(t *testing.T) {
+	_, repo := setupTest(t)
+
+	// Attempt to get order price with non-existent orderID
+	price, err := repo.GetOrderPrice("nonexistentid")
+	if err == nil {
+		t.Fatalf("Expected error for non-existent orderID, got nil")
+	}
+	if price != -1 {
+		t.Fatalf("Expected price -1 for non-existent orderID, got %v", price)
+	}
+}
+
+func TestListOrdersByUserValidID(t *testing.T) {
+	_, repo := setupTest(t)
+
+	// Adding an additional order for user123 to test multiple orders
+	err := repo.CreateOrder("user123", []*pb.OrderItem{
+		{ItemId: "item999", Quantity: 4, Price: 14.99},
+	})
+	if err != nil {
+		t.Fatalf("Failed to create additional order: %v", err)
+	}
+
+	// List orders for an existing user
+	orders, err := repo.ListOrdersByUser("user123")
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if len(orders) != 2 {
+		t.Fatalf("Expected 2 orders for user123, got %d", len(orders))
+	}
+}
+
+func TestListOrdersByUserNoOrders(t *testing.T) {
+	_, repo := setupTest(t)
+
+	// List orders for a user with no orders
+	orders, err := repo.ListOrdersByUser("user000")
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if len(orders) != 0 {
+		t.Fatalf("Expected 0 orders for user000, got %d", len(orders))
+	}
+}
+
+func TestListOrdersByUserInvalidID(t *testing.T) {
+	_, repo := setupTest(t)
+
+	// List orders for an invalid userID (empty string)
+	orders, err := repo.ListOrdersByUser("")
+	if err == nil {
+		t.Fatalf("Expected error for invalid userID, got nil")
+	}
+	if len(orders) != 0 {
+		t.Fatalf("Expected 0 orders for empty userID, got %d", len(orders))
 	}
 }

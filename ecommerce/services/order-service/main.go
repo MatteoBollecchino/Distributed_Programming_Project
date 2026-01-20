@@ -1,6 +1,5 @@
 package main
 
-/*
 import (
 	"log"
 	"net"
@@ -9,13 +8,13 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/catalog"
-	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/catalog-service/internal"
-	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/catalog-service/internal/domain"
-	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/catalog-service/internal/repository"
+	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/order"
+	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/order-service/internal"
+	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/order-service/internal/domain"
+	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/services/order-service/internal/repository"
 )
 
-var port = "8083"
+var port = "8084"
 
 func main() {
 
@@ -26,7 +25,7 @@ func main() {
 	}
 
 	// Migrate the schema
-	if err := db.AutoMigrate(&domain.CatalogItem{}); err != nil {
+	if err := db.AutoMigrate(&domain.Order{}, &domain.OrderItem{}); err != nil {
 		log.Fatalf("Failed to migrate database schema: %v", err)
 	}
 
@@ -37,19 +36,19 @@ func main() {
 	}
 
 	// Initialize repository
-	catalogRepo := repository.NewCatalogServiceRepository(db)
+	orderRepo := repository.NewOrderServiceRepository(db)
 
-	// Initialize CatalogServer
-	catalogServer := internal.NewCatalogServer(catalogRepo)
+	// Initialize OrderServer
+	orderServer := internal.NewOrderServer(orderRepo)
 
 	// Register gRPC server
 	grpcServer := grpc.NewServer()
-	pb.RegisterCatalogServiceServer(grpcServer, catalogServer)
+	pb.RegisterOrderServiceServer(grpcServer, orderServer)
 
-	log.Printf("Catalog service listening on port %s", port)
+	log.Printf("Order service listening on port %s", port)
 
 	// Start serving
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("gRPC catalog service failed: %v", err)
+		log.Fatalf("gRPC order service failed: %v", err)
 	}
-}*/
+}

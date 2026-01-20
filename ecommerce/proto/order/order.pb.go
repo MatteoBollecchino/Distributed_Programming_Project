@@ -223,7 +223,7 @@ func (x *Order) GetStatus() OrderStatus {
 // CREATE ORDER
 type CreateOrderRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	OrderItems    []*OrderItem           `protobuf:"bytes,2,rep,name=order_items,json=orderItems,proto3" json:"order_items,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -259,9 +259,9 @@ func (*CreateOrderRequest) Descriptor() ([]byte, []int) {
 	return file_proto_order_order_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *CreateOrderRequest) GetUsername() string {
+func (x *CreateOrderRequest) GetUserId() string {
 	if x != nil {
-		return x.Username
+		return x.UserId
 	}
 	return ""
 }
@@ -414,7 +414,7 @@ func (x *UpdateOrderStatusResponse) GetErrorMessage() string {
 	return ""
 }
 
-// LISTING ORDER BY USERNAME
+// LISTING ORDER BY USER ID
 type GetOrderRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
@@ -611,7 +611,7 @@ func (x *GetOrderPriceResponse) GetErrorMessage() string {
 // LIST ORDERS BY USER
 type ListOrdersByUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -646,9 +646,9 @@ func (*ListOrdersByUserRequest) Descriptor() ([]byte, []int) {
 	return file_proto_order_order_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *ListOrdersByUserRequest) GetUsername() string {
+func (x *ListOrdersByUserRequest) GetUserId() string {
 	if x != nil {
-		return x.Username
+		return x.UserId
 	}
 	return ""
 }
@@ -718,9 +718,9 @@ const file_proto_order_order_proto_rawDesc = "" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12&\n" +
 	"\x05items\x18\x03 \x03(\v2\x10.order.OrderItemR\x05items\x12*\n" +
-	"\x06status\x18\x04 \x01(\x0e2\x12.order.OrderStatusR\x06status\"c\n" +
-	"\x12CreateOrderRequest\x12\x1a\n" +
-	"\busername\x18\x01 \x01(\tR\busername\x121\n" +
+	"\x06status\x18\x04 \x01(\x0e2\x12.order.OrderStatusR\x06status\"`\n" +
+	"\x12CreateOrderRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x121\n" +
 	"\vorder_items\x18\x02 \x03(\v2\x10.order.OrderItemR\n" +
 	"orderItems\":\n" +
 	"\x13CreateOrderResponse\x12#\n" +
@@ -740,9 +740,9 @@ const file_proto_order_order_proto_rawDesc = "" +
 	"\x15GetOrderPriceResponse\x12\x1f\n" +
 	"\vtotal_price\x18\x01 \x01(\x01R\n" +
 	"totalPrice\x12#\n" +
-	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"5\n" +
-	"\x17ListOrdersByUserRequest\x12\x1a\n" +
-	"\busername\x18\x01 \x01(\tR\busername\"e\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"2\n" +
+	"\x17ListOrdersByUserRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"e\n" +
 	"\x18ListOrdersByUserResponse\x12$\n" +
 	"\x06orders\x18\x01 \x03(\v2\f.order.OrderR\x06orders\x12#\n" +
 	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage*T\n" +
@@ -752,8 +752,8 @@ const file_proto_order_order_proto_rawDesc = "" +
 	"PROCESSING\x10\x01\x12\v\n" +
 	"\aSHIPPED\x10\x02\x12\r\n" +
 	"\tDELIVERED\x10\x03\x12\f\n" +
-	"\bCANCELED\x10\x042\x89\x03\n" +
-	"\vCartService\x12D\n" +
+	"\bCANCELED\x10\x042\x8a\x03\n" +
+	"\fOrderService\x12D\n" +
 	"\vCreateOrder\x12\x19.order.CreateOrderRequest\x1a\x1a.order.CreateOrderResponse\x12V\n" +
 	"\x11UpdateOrderStatus\x12\x1f.order.UpdateOrderStatusRequest\x1a .order.UpdateOrderStatusResponse\x12;\n" +
 	"\bGetOrder\x12\x16.order.GetOrderRequest\x1a\x17.order.GetOrderResponse\x12J\n" +
@@ -796,16 +796,16 @@ var file_proto_order_order_proto_depIdxs = []int32{
 	0,  // 3: order.UpdateOrderStatusRequest.status:type_name -> order.OrderStatus
 	2,  // 4: order.GetOrderResponse.order:type_name -> order.Order
 	2,  // 5: order.ListOrdersByUserResponse.orders:type_name -> order.Order
-	3,  // 6: order.CartService.CreateOrder:input_type -> order.CreateOrderRequest
-	5,  // 7: order.CartService.UpdateOrderStatus:input_type -> order.UpdateOrderStatusRequest
-	7,  // 8: order.CartService.GetOrder:input_type -> order.GetOrderRequest
-	9,  // 9: order.CartService.GetOrderPrice:input_type -> order.GetOrderPriceRequest
-	11, // 10: order.CartService.ListOrdersByUser:input_type -> order.ListOrdersByUserRequest
-	4,  // 11: order.CartService.CreateOrder:output_type -> order.CreateOrderResponse
-	6,  // 12: order.CartService.UpdateOrderStatus:output_type -> order.UpdateOrderStatusResponse
-	8,  // 13: order.CartService.GetOrder:output_type -> order.GetOrderResponse
-	10, // 14: order.CartService.GetOrderPrice:output_type -> order.GetOrderPriceResponse
-	12, // 15: order.CartService.ListOrdersByUser:output_type -> order.ListOrdersByUserResponse
+	3,  // 6: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
+	5,  // 7: order.OrderService.UpdateOrderStatus:input_type -> order.UpdateOrderStatusRequest
+	7,  // 8: order.OrderService.GetOrder:input_type -> order.GetOrderRequest
+	9,  // 9: order.OrderService.GetOrderPrice:input_type -> order.GetOrderPriceRequest
+	11, // 10: order.OrderService.ListOrdersByUser:input_type -> order.ListOrdersByUserRequest
+	4,  // 11: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
+	6,  // 12: order.OrderService.UpdateOrderStatus:output_type -> order.UpdateOrderStatusResponse
+	8,  // 13: order.OrderService.GetOrder:output_type -> order.GetOrderResponse
+	10, // 14: order.OrderService.GetOrderPrice:output_type -> order.GetOrderPriceResponse
+	12, // 15: order.OrderService.ListOrdersByUser:output_type -> order.ListOrdersByUserResponse
 	11, // [11:16] is the sub-list for method output_type
 	6,  // [6:11] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name

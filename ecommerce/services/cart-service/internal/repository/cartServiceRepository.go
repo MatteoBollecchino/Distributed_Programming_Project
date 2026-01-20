@@ -179,12 +179,12 @@ func (r *CartServiceRepository) CalculateTotalPrice(username string) (float64, e
 	// Retrieve the cart of the user from the database
 	found, cart, err := r.RetrieveCart(username)
 	if err != nil && found {
-		return 0.0, err
+		return -1, err
 	}
 
-	// If the cart does not exist, return 0 and an error
+	// If the cart does not exist, return -1 and an error
 	if !found {
-		return 0.0, status.Errorf(codes.NotFound, "cart not found for user: %s", username)
+		return -1, status.Errorf(codes.NotFound, "cart not found for user: %s", username)
 	}
 
 	// Calculate the total price of the items in the cart

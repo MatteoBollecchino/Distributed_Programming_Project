@@ -44,7 +44,7 @@ message Order {
 
 // CREATE ORDER
 message CreateOrderRequest {
-    string username = 1;
+    string user_id = 1;
     repeated OrderItem order_items = 2;
 }
 
@@ -62,7 +62,7 @@ message UpdateOrderStatusResponse {
     string error_message = 1;
 }
 
-// LISTING ORDER BY USERNAME
+// LISTING ORDER BY USER ID
 message GetOrderRequest {
     string order_id = 1;
 }
@@ -84,7 +84,7 @@ message GetOrderPriceResponse {
 
 // LIST ORDERS BY USER
 message ListOrdersByUserRequest {
-    string username = 1;
+    string user_id = 1;
 }
 
 message ListOrdersByUserResponse {
@@ -94,7 +94,7 @@ message ListOrdersByUserResponse {
 
 
 // SERVICES
-service CartService {
+service OrderService {
     rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
     rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (UpdateOrderStatusResponse);
     rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);

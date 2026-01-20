@@ -53,3 +53,21 @@ func DomainOrderToProtoOrder(order *Order) (*pb.Order, error) {
 		Status:  pb.OrderStatus(pb.OrderStatus_value[string(order.Status)]),
 	}, nil
 }
+
+// MapProtoStatusToDomainStatus maps a pb.OrderStatus to a domain.Status
+func MapProtoStatusToDomainStatus(protoStatus pb.OrderStatus) (Status, error) {
+	switch protoStatus {
+	case pb.OrderStatus_PENDING:
+		return Pending, nil
+	case pb.OrderStatus_PROCESSING:
+		return Processing, nil
+	case pb.OrderStatus_SHIPPED:
+		return Shipped, nil
+	case pb.OrderStatus_DELIVERED:
+		return Delivered, nil
+	case pb.OrderStatus_CANCELED:
+		return Canceled, nil
+	default:
+		return "", fmt.Errorf("invalid proto order status: %v", protoStatus)
+	}
+}

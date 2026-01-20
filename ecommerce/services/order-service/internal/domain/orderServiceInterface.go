@@ -8,7 +8,7 @@ type OrderServiceInterface interface {
 	CreateOrder(userID string, items []*pb.OrderItem) error
 
 	// UpdateOrderStatus updates the status of an order by its unique identifier.
-	UpdateOrderStatus(orderID string, status Status) error
+	UpdateOrderStatus(orderID string, status pb.OrderStatus) error
 
 	// GetOrder retrieves an order by its unique identifier.
 	GetOrder(orderID string) (*pb.Order, error)

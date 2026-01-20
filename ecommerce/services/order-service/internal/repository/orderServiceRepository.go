@@ -27,6 +27,9 @@ func (r *OrderServiceRepository) CreateOrder(userID string, items []*pb.OrderIte
 	}
 
 	// Validate List of Order Items
+	if items == nil {
+		return errors.New("items list cannot be nil")
+	}
 	if len(items) == 0 {
 		return errors.New("order must contain at least one item")
 	}
@@ -72,15 +75,20 @@ func (r *OrderServiceRepository) CreateOrder(userID string, items []*pb.OrderIte
 }
 
 // UpdateOrderStatus updates the status of an existing order.
-func (r *OrderServiceRepository) UpdateOrderStatus(orderID string, status domain.Status) error {
+func (r *OrderServiceRepository) UpdateOrderStatus(orderID string, status pb.OrderStatus) error {
 
 	// Validate OrderID
 	if err := checkValidID(orderID); err != nil {
 		return err
 	}
 
+	domainStatus, err := domain.MapProtoStatusToDomainStatus(status)
+	if err != nil {
+		return err
+	}
+
 	// Update Status in Database
-	result := r.db.Model(&domain.Order{}).Where("order_id = ?", orderID).Update("status", status)
+	result := r.db.Model(&domain.Order{}).Where("order_id = ?", orderID).Update("status", domainStatus)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -91,20 +99,38 @@ func (r *OrderServiceRepository) UpdateOrderStatus(orderID string, status domain
 }
 
 // GetOrder retrieves an order by its unique identifier.
-func (r *OrderServiceRepository) GetOrder(orderID string) (*domain.Order, error) {
-	var order domain.Order
-	if err := r.db.Where("order_id = ?", orderID).First(&order).Error; err != nil {
+func (r *OrderServiceRepository) GetOrder(orderID string) (*pb.Order, error) {
+
+	// Validate OrderID
+	if err := checkValidID(orderID); err != nil {
 		return nil, err
 	}
-	return &order, nil
+
+	// Retrieve Order from Database
+	var domainOrder domain.Order
+	if err := r.db.Preload("Items").Where("order_id = ?", orderID).First(&domainOrder).Error; err != nil {
+		return nil, err
+	}
+
+	order, err := domain.DomainOrderToProtoOrder(&domainOrder)
+	if err != nil {
+		return nil, err
+	}
+	return order, nil
 }
 
-/*
 // GetOrderPrice retrieves the total price of an order by its unique identifier.
 func (r *OrderServiceRepository) GetOrderPrice(orderID string) (float64, error) {
+
+	// Validate OrderID
+	if err := checkValidID(orderID); err != nil {
+		return -1, err
+	}
+
+	// Retrieve Order and Calculate Total Price
 	var order domain.Order
-	if err := r.db.Where("order_id = ?", orderID).First(&order).Error; err != nil {
-		return 0, err
+	if err := r.db.Preload("Items").Where("order_id = ?", orderID).First(&order).Error; err != nil {
+		return -1, err
 	}
 	var totalPrice float64
 	for _, item := range order.Items {
@@ -114,13 +140,29 @@ func (r *OrderServiceRepository) GetOrderPrice(orderID string) (float64, error) 
 }
 
 // ListOrdersByUser retrieves all orders associated with a specific user.
-func (r *OrderServiceRepository) ListOrdersByUser(userID string) ([]*domain.Order, error) {
-	var orders []*domain.Order
-	if err := r.db.Where("user_id = ?", userID).Find(&orders).Error; err != nil {
+func (r *OrderServiceRepository) ListOrdersByUser(userID string) ([]*pb.Order, error) {
+
+	// Validate UserID
+	if err := checkValidID(userID); err != nil {
 		return nil, err
 	}
+
+	// Retrieve Orders from Database
+	var domainOrders []*domain.Order
+	if err := r.db.Preload("Items").Where("user_id = ?", userID).Find(&domainOrders).Error; err != nil {
+		return nil, err
+	}
+
+	orders := make([]*pb.Order, len(domainOrders))
+	for i, domainOrder := range domainOrders {
+		order, err := domain.DomainOrderToProtoOrder(domainOrder)
+		if err != nil {
+			return nil, err
+		}
+		orders[i] = order
+	}
 	return orders, nil
-}*/
+}
 
 // PRIVATE FUNCTIONS TO CHECK ON THE VALIDITY OF INPUTS
 
