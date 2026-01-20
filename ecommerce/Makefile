@@ -71,7 +71,7 @@ build:
 	@echo "Build completed"
 
 # ==========================
-# RUN SERVICES
+# RUN SINGLE SERVICES
 # ==========================
 .PHONY: run-auth
 run-auth:
@@ -92,6 +92,13 @@ run-order:
 .PHONY: run-payment
 run-payment:
 	cd $(SERVICES_DIR)/payment-service && $(GO) run main.go
+
+# ==========================
+# RUN ALL SERVICES
+# ==========================
+.PHONY: run-all
+run-all:
+	go run scripts/run-all.go
 
 # ==========================
 # TEST
