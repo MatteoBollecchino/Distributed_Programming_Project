@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 )
 
+var port = ":8080"
+
 var templates = loadTemplates()
 
 func checkerr(writer http.ResponseWriter, err error) {
@@ -52,6 +54,11 @@ func loginHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func main() {
+
+	//mux := http.NewServeMux()
+	// SOSTITUIRE GLI http.HandleFunc con mux.HandleFunc
+
+	// mapping URL paths to handler functions
 	http.HandleFunc("/welcome", welcomeHandler)
 	http.HandleFunc("/product_catalog", productCatalogHandler)
 	http.HandleFunc("/shopping_cart", shoppingCartHandler)
@@ -60,5 +67,7 @@ func main() {
 	http.HandleFunc("/login", loginHandler)
 
 	// starts the server on the port 8080 and nil means that the predefined router has to be used
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Printf("The Web Server listening on %s", port)
+	// METTERE mux AL POSTO DI nil
+	log.Fatal(http.ListenAndServe(port, nil))
 }
