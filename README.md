@@ -14,10 +14,11 @@ concurrency management, separation of concerns, and architectural scalability.
 
 ## Makefile instructions 
 
-make run            # Start
+make run-all        # Start
+make proto          # Compiles with protoc
+make clean-proto    # Removes files generated with protoc
 make build          # Build binary
 make test           # Run tests
-make test-cover     # Run tests with coverage
 make clean          # Clean build artifacts
 
 ## Project Flow
@@ -32,6 +33,24 @@ Order Service ↔ Catalog Service
   ↓
 Database (GORM)
 
+# Request Flow
+
+GET /catalog
+  ↓
+RequireAuth middleware
+  ↓
+CatalogHandler
+  ↓
+CatalogClient.ListProducts()
+  ↓
+Catalog Service
+  ↓
+ProductDTO[]
+  ↓
+ProductViewModel[]
+  ↓
+catalog.html
+
 
 ## Project Structure
 
@@ -43,7 +62,7 @@ ecommerce/
 │   ├── catalog-service/
 │   ├── cart-service/
 │   ├── order-service/
-│   └── wishlist-service/
+│   └── payment-service/
 ├── web/
 │   ├── templates/
 │   └── server/
@@ -67,13 +86,35 @@ ecommerce/
 └── Makefile
 
 web/
-├── server/
-|-- client/
+├── cmd/
+│   └── server/
+│       └── main.go
+├── internal/
+│   ├── handlers/
+│   │   ├── auth.go
+│   │   ├── catalog.go
+│   │   ├── cart.go
+│   │   ├── order.go
+│   │   └── admin.go
+│   ├── clients/
+│   │   ├── auth_client.go
+│   │   ├── catalog_client.go
+│   │   ├── cart_client.go
+│   │   └── order_client.go
+│   ├── session/
+│   │   └── secure_cookie.go
+│   ├── middleware/
+│   │   ├── auth.go
+│   │   └── admin.go
+│   └── viewmodels/
+│       ├── product_vm.go
+│       └── order_vm.go
 ├── templates/
 │   ├── login.html
 │   ├── catalog.html
 │   ├── cart.html
 │   └── orders.html
+
 
 
 

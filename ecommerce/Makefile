@@ -19,23 +19,27 @@ endif
 # ==========================
 SERVICES_DIR=services
 
-SERVICES=auth-service \
-         cart-service \
-         catalog-service \
-         order-service \
-         payment-service
+TESTS_DIR=internal/tests
 
 PROTOC=protoc
 
-PROTO_SERVICES=auth cart catalog order payment
-
 GO=go
+
 
 # ==========================
 # DEFAULT
 # ==========================
 .PHONY: all
 all: proto build
+
+
+# ==========================
+# RUN ALL SERVICES
+# ==========================
+.PHONY: run-all
+run-all:
+	go run scripts/run-all.go
+
 
 # ==========================
 # PROTOBUF
@@ -50,6 +54,7 @@ proto:
 	$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/payment/payment.proto
 	@echo "Protobuf generated"
 
+
 # ==========================
 # CLEAN PROTO GENERATED FILES
 # ==========================
@@ -59,16 +64,20 @@ clean-proto:
 	@$(FIND_PROTO)
 	@echo "Protobuf files removed"
 
+
 # ==========================
 # BUILD
 # ==========================
 .PHONY: build
 build:
 	@echo "Building services..."
-	@for svc in $(SERVICES); do \
-		cd $(SERVICES_DIR)/$$svc && $(GO) build -o $$svc ; \
-	done
+	cd $(SERVICES_DIR)/auth-service && $(GO) build -o auth-service
+	cd $(SERVICES_DIR)/cart-service && $(GO) build -o cart-service
+	cd $(SERVICES_DIR)/catalog-service && $(GO) build -o catalog-service
+	cd $(SERVICES_DIR)/order-service && $(GO) build -o order-service
+	cd $(SERVICES_DIR)/payment-service && $(GO) build -o payment-service
 	@echo "Build completed"
+
 
 # ==========================
 # RUN SINGLE SERVICES
@@ -93,12 +102,6 @@ run-order:
 run-payment:
 	cd $(SERVICES_DIR)/payment-service && $(GO) run main.go
 
-# ==========================
-# RUN ALL SERVICES
-# ==========================
-.PHONY: run-all
-run-all:
-	go run scripts/run-all.go
 
 # ==========================
 # TEST
@@ -106,10 +109,13 @@ run-all:
 .PHONY: test
 test:
 	@echo "Running tests..."
-	@for svc in $(SERVICES); do \
-		cd $(SERVICES_DIR)/$$svc && $(GO) test ./... ; \
-	done
+	cd $(SERVICES_DIR)/auth-service/$(TESTS_DIR) && $(GO) test ./...
+	cd $(SERVICES_DIR)/cart-service/$(TESTS_DIR) && $(GO) test ./...
+	cd $(SERVICES_DIR)/catalog-service/$(TESTS_DIR) && $(GO) test ./...
+	cd $(SERVICES_DIR)/order-service/$(TESTS_DIR) && $(GO) test ./...
+	cd $(SERVICES_DIR)/payment-service/$(TESTS_DIR) && $(GO) test ./...
 	@echo "Tests completed"
+
 
 # ==========================
 # CLEAN
@@ -117,7 +123,9 @@ test:
 .PHONY: clean
 clean:
 	@echo "Cleaning binaries..."
-	@for svc in $(SERVICES); do \
-		$(RM) $(SERVICES_DIR)/$$svc/$$svc$(EXE); \
-	done
+	$(RM) $(SERVICES_DIR)/auth-service/auth-service$(EXE)
+	$(RM) $(SERVICES_DIR)/cart-service/cart-service$(EXE)
+	$(RM) $(SERVICES_DIR)/catalog-service/catalog-service$(EXE)
+	$(RM) $(SERVICES_DIR)/order-service/order-service$(EXE)
+	$(RM) $(SERVICES_DIR)/payment-service/payment-service$(EXE)
 	@echo "Binaries removed"
