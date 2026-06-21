@@ -41,8 +41,8 @@ run-all:
 
 # Logica condizionale spostata FUORI dal target per non rompere il parsing di Make
 run-all-tabs:
+	@echo "Starting services in different tabs..."
 ifeq ($(OS),windows)
-	@echo "Starting services in Windows Terminal..."
 	@start "Auth Service" cmd /k "cd $(CURDIR)\$(SERVICES_DIR)\auth-service && $(GO) run main.go"
 	@start "Cart Service" cmd /k "cd $(CURDIR)\$(SERVICES_DIR)\cart-service && $(GO) run main.go"
 	@start "Catalog Service" cmd /k "cd $(CURDIR)\$(SERVICES_DIR)\catalog-service && $(GO) run main.go"
@@ -51,45 +51,15 @@ ifeq ($(OS),windows)
 else
 ifeq ($(shell uname),Linux)
 	@echo "Starting services in GNOME Terminal tabs..."
-	@gnome-terminal \
-		--tab --title="Auth" -- bash -c "cd $(CURDIR)/$(SERVICES_DIR)/auth-service && $(GO) run main.go; exec bash" \
-		--tab --title="Cart" -- bash -c "cd $(CURDIR)/$(SERVICES_DIR)/cart-service && $(GO) run main.go; exec bash" \
-		--tab --title="Catalog" -- bash -c "cd $(CURDIR)/$(SERVICES_DIR)/catalog-service && $(GO) run main.go; exec bash" \
-		--tab --title="Order" -- bash -c "cd $(CURDIR)/$(SERVICES_DIR)/order-service && $(GO) run main.go; exec bash" \
-		--tab --title="Payment" -- bash -c "cd $(CURDIR)/$(SERVICES_DIR)/payment-service && $(GO) run main.go; exec bash"
+	@gnome-terminal --tab --title="Auth" -- bash -c "cd $(CURDIR)/$(SERVICES_DIR)/auth-service && $(GO) run main.go; exec bash"
+	@gnome-terminal --tab --title="Cart" -- bash -c "cd $(CURDIR)/$(SERVICES_DIR)/cart-service && $(GO) run main.go; exec bash"
+	@gnome-terminal --tab --title="Catalog" -- bash -c "cd $(CURDIR)/$(SERVICES_DIR)/catalog-service && $(GO) run main.go; exec bash"
+	@gnome-terminal --tab --title="Order" -- bash -c "cd $(CURDIR)/$(SERVICES_DIR)/order-service && $(GO) run main.go; exec bash"
+	@gnome-terminal --tab --title="Payment" -- bash -c "cd $(CURDIR)/$(SERVICES_DIR)/payment-service && $(GO) run main.go; exec bash"
 else
 	@echo "You're on MACOS"
 endif
 endif
-
-# ==========================
-# PROTOBUF
-# ==========================
-proto:
-	@echo "Generating protobuf files..."
-	$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/auth/auth.proto
-	$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/cart/cart.proto
-	$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/catalog/catalog.proto
-	$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/order/order.proto
-	$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/payment/payment.proto
-	@echo "Protobuf generated"
-
-clean-proto:
-	@echo "Removing generated protobuf files..."
-	@$(FIND_PROTO)
-	@echo "Protobuf files removed"
-
-# ==========================
-# BUILD
-# ==========================
-build:
-	@echo "Building services..."
-	cd $(SERVICES_DIR)/auth-service && $(GO) build -o auth-service
-	cd $(SERVICES_DIR)/cart-service && $(GO) build -o cart-service
-	cd $(SERVICES_DIR)/catalog-service && $(GO) build -o catalog-service
-	cd $(SERVICES_DIR)/order-service && $(GO) build -o order-service
-	cd $(SERVICES_DIR)/payment-service && $(GO) build -o payment-service
-	@echo "Build completed"
 
 # ==========================
 # RUN SINGLE SERVICES
@@ -159,3 +129,32 @@ clean:
 	$(RM) $(SERVICES_DIR)/order-service/order-service$(EXE)
 	$(RM) $(SERVICES_DIR)/payment-service/payment-service$(EXE)
 	@echo "Binaries removed"
+
+# ==========================
+# PROTOBUF
+# ==========================
+proto:
+	@echo "Generating protobuf files..."
+	$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/auth/auth.proto
+	$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/cart/cart.proto
+	$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/catalog/catalog.proto
+	$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/order/order.proto
+	$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/payment/payment.proto
+	@echo "Protobuf generated"
+
+clean-proto:
+	@echo "Removing generated protobuf files..."
+	@$(FIND_PROTO)
+	@echo "Protobuf files removed"
+
+# ==========================
+# BUILD
+# ==========================
+build:
+	@echo "Building services..."
+	cd $(SERVICES_DIR)/auth-service && $(GO) build -o auth-service
+	cd $(SERVICES_DIR)/cart-service && $(GO) build -o cart-service
+	cd $(SERVICES_DIR)/catalog-service && $(GO) build -o catalog-service
+	cd $(SERVICES_DIR)/order-service && $(GO) build -o order-service
+	cd $(SERVICES_DIR)/payment-service && $(GO) build -o payment-service
+	@echo "Build completed"
