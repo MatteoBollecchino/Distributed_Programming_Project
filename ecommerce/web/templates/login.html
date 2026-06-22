@@ -5,7 +5,6 @@
     <title>FantaWorld – Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
 
     <style>
@@ -31,7 +30,6 @@
             width: 100%;
             max-width: 420px;
             box-shadow: 0 15px 40px rgba(0,0,0,0.7);
-            text-align: center;
             margin: auto;
         }
 
@@ -51,8 +49,10 @@
 
         .login-box label {
             display: block;
+            text-align: left;
             margin-bottom: 6px;
             font-weight: 500;
+            color: #fff;
         }
 
         .login-box input {
@@ -63,6 +63,7 @@
             border: none;
             outline: none;
             font-size: 0.95rem;
+            box-sizing: border-box; /* Input doesn't go out of the box*/
         }
 
         .login-box input:focus {
@@ -80,11 +81,23 @@
             cursor: pointer;
             transition: all 0.3s;
             color: #000;
+            margin-top: 10px;
         }
 
         .login-box button:hover {
             background-color: #ffd966;
             transform: scale(1.03);
+        }
+
+        .error-message {
+            background-color: rgba(220, 53, 69, 0.2);
+            border: 1px solid #dc3545;
+            color: #ea868f;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            text-align: center;
         }
 
         .login-box .links {
@@ -110,18 +123,28 @@
         <h1>FantaWorld</h1>
         <p>Enter a world of fantasy and science fiction</p>
 
+        {{ if . }}
+            <div class="error-message">
+                {{ . }}
+            </div>
+        {{ end }}
+
         <form method="POST" action="/login">
             <label for="username">Username</label>
-            <input type="text" id="username" name="username" required>
+            <input type="text" id="username" name="username" required autocomplete="username">
 
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
+            <input type="password" id="password" name="password" required autocomplete="current-password">
 
             <button type="submit">Login</button>
         </form>
+        
+        <div class="links">
+            <p>Don't have an account? <a href="/register">Register here</a></p>
+        </div>
     </div>
 
-    {{template "footer" .}}
-
 </body>
+
+{{template "footer" .}}
 </html>

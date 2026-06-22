@@ -73,10 +73,20 @@
         background-color: #ffd966;
         transform: scale(1.05);
     }
+
+    .product-card button:disabled {
+        background-color: #555555;
+        color: #aaaaaa;
+        cursor: not-allowed;
+        transform: none;
+    }
+    .product-card button:disabled:hover {
+        background-color: #555555;
+        transform: none;
+    }
 </style>
 
 <body>
-    <!-- Page Title -->
     <section class="page-title">
         <div style="
             background: rgba(20, 20, 40, 0.8);
@@ -85,11 +95,10 @@
             color: #fff;
             box-shadow: 0 15px 40px rgba(0,0,0,0.7);
         ">
-        <h2>{{ .Title }}</h2>
-        <p>Discover legendary items from fantasy and science fiction worlds</p>
-    </section>
+            <h2>{{ .Title }}</h2>
+            <p>Discover legendary items from fantasy and science fiction worlds</p>
+        </div> </section>
 
-    <!-- Product Catalog -->
     <section class="catalog">
 
         {{ range .Products }}
@@ -97,7 +106,15 @@
                 <h3>{{ .GetItemId }}</h3>
                 <div class="price">€{{ .GetPrice }}</div>
                 <p>{{ .GetDescription }}</p>
-                <button>Add to Cart</button>
+                
+                {{ if $.IsLoggedIn }}
+                    <form action="/cart/add" method="POST">
+                        <input type="hidden" name="product_id" value="{{ .GetItemId }}">
+                        <button type="submit">Add to Cart</button>
+                    </form>
+                {{ else }}
+                    <button type="button" disabled>Log in to buy</button>
+                {{ end }}
             </div>
         {{ else }}
             <p>No product available.</p>
