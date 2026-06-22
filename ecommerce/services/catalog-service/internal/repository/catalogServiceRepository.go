@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"log"
 
 	"gorm.io/gorm"
 
@@ -174,6 +175,41 @@ func (r *CatalogServiceRepository) RetrieveCatalogItem(itemID string) (*domain.C
 		return nil, err
 	}
 	return &item, nil
+}
+
+// CreateDefaultProducts creates inital default catalog
+func (r *CatalogServiceRepository) CreateDefaultProducts() error {
+	var count int64
+
+	// Counting how many products are in the database
+	if err := r.db.Model(&domain.CatalogItem{}).Count(&count).Error; err != nil {
+		return err
+	}
+
+	// If database is empty, insert default items in the catalog
+	if count == 0 {
+		defaultProducts := []domain.CatalogItem{
+			{ItemID: "The Lord of the Rings", Description: "A fantastic fantasy book", Price: 30.00, QuantityAvailable: 10},
+			{ItemID: "Berserk Deluxe Edition Vol.1", Description: "Best manga ever", Price: 53.00, QuantityAvailable: 25},
+			{ItemID: "Warhammer 40k, Ultramarines Titus Action Figure", Description: "Very nice figure", Price: 66.09, QuantityAvailable: 15},
+			{ItemID: "20th Century Boys Ultimate Deluxe Edition Vol.1-12", Description: "Most famous Urasawa's collection", Price: 163.90, QuantityAvailable: 20},
+		}
+
+		for _, p := range defaultProducts {
+			protoCatalogItem, err := domain.DomainCatalogItemToProtoCatalogItem(&p)
+			if err != nil {
+				return err
+			}
+			if err = r.AddCatalogItem(protoCatalogItem); err != nil {
+				return err
+			}
+		}
+		log.Println("Default Catalog Products created.")
+	} else {
+		return errors.New("Failed creation of default items, database was NOT empty")
+	}
+
+	return nil
 }
 
 // PRIVATE FUNCTIONS TO VALIDATE INPUTS

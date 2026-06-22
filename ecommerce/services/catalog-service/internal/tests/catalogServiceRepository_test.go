@@ -17,8 +17,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("Failed to connect database: %v", err)
 	}
 
-	err = db.AutoMigrate(&domain.CatalogItem{})
-	if err != nil {
+	if err = db.AutoMigrate(&domain.CatalogItem{}); err != nil {
 		t.Fatalf("Failed to migrate database: %v", err)
 	}
 	return db
@@ -61,15 +60,13 @@ func TestAddNewCatalogItem(t *testing.T) {
 		QuantityAvailable: 20,
 		Price:             29.99,
 	}
-	err := repo.AddCatalogItem(newItem)
-	if err != nil {
+	if err := repo.AddCatalogItem(newItem); err != nil {
 		t.Errorf("Failed to add new catalog item: %v", err)
 	}
 
 	// Verify the item was added in the database
 	var item domain.CatalogItem
-	err = db.Where("item_id = ?", "item789").First(&item).Error
-	if err != nil {
+	if err := db.Where("item_id = ?", "item789").First(&item).Error; err != nil {
 		t.Errorf("Error retrieving added item: %v", err)
 	}
 	if item.Description != "New Test Item" {
@@ -397,5 +394,39 @@ func TestListCatalogItems(t *testing.T) {
 		if item.Price != expectedItem.Price {
 			t.Errorf("Item price mismatch for %v: got %v, want %v", item.ItemId, item.Price, expectedItem.Price)
 		}
+	}
+}
+
+func TestCreateDefaultProducts(t *testing.T) {
+	// Creation of an empty database
+	db := setupTestDB(t)
+	repo := repository.NewCatalogServiceRepository(db)
+
+	if err := repo.CreateDefaultProducts(); err != nil {
+		t.Fatalf("Failed to create default products on empty DB: %v", err)
+	}
+
+	// Verify that database contains exactly 4 elements
+	var count int64
+	db.Model(&domain.CatalogItem{}).Count(&count)
+	if count != 4 {
+		t.Errorf("Expected 4 default items in database, got %v", count)
+	}
+
+	// Retrieving a specific item
+	var berserkItem domain.CatalogItem
+	if err := db.Where("item_id = ?", "Berserk Deluxe Edition Vol.1").First(&berserkItem).Error; err != nil {
+		t.Errorf("Could not find Berserk in default catalog: %v", err)
+	}
+	if berserkItem.QuantityAvailable != 25 {
+		t.Errorf("Berserk quantity mismatch: got %v, want 25", berserkItem.QuantityAvailable)
+	}
+}
+
+func TestFailingCreationDefaultProducts(t *testing.T) {
+	_, repo := setupTest(t)
+
+	if err := repo.CreateDefaultProducts(); err == nil {
+		t.Fatalf("Successful creation of deafult, but database was NOT empty ")
 	}
 }
