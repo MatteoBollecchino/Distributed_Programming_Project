@@ -1,0 +1,191 @@
+{{template "header" .}}
+
+<style>
+    /* ===== Page Title ===== */
+    .page-title {
+        text-align: center;
+        padding: 40px 20px 20px;
+    }
+
+    .page-title h2 {
+        font-family: 'Cinzel', serif;
+        font-size: 2.8rem;
+        margin-bottom: 10px;
+        color: #f5c542;
+    }
+
+    .page-title p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    /* ===== Cart Container ===== */
+    .cart-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* ===== Cart Table ===== */
+    .cart-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: rgba(0, 0, 0, 0.75);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        margin-bottom: 30px;
+    }
+
+    .cart-table th, .cart-table td {
+        padding: 15px 20px;
+        text-align: left;
+    }
+
+    .cart-table th {
+        background-color: rgba(20, 20, 40, 0.9);
+        color: #f5c542;
+        font-family: 'Cinzel', serif;
+        font-size: 1.1rem;
+        border-bottom: 2px solid #f5c542;
+    }
+
+    .cart-table td {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+    }
+
+    .cart-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* ===== Buttons & Actions ===== */
+    .btn-remove {
+        padding: 8px 15px;
+        border: 1px solid #dc3545;
+        border-radius: 20px;
+        background-color: transparent;
+        color: #dc3545;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-remove:hover {
+        background-color: #dc3545;
+        color: #fff;
+        transform: scale(1.05);
+    }
+
+    .cart-summary {
+        background-color: rgba(20, 20, 40, 0.8);
+        padding: 30px;
+        border-radius: 16px;
+        text-align: right;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+
+    .cart-summary h3 {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+    }
+
+    .cart-summary .total-price {
+        color: #f5c542;
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+
+    .btn-checkout {
+        padding: 14px 35px;
+        border: none;
+        border-radius: 25px;
+        background-color: #f5c542;
+        color: #000;
+        font-weight: bold;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 15px;
+        display: inline-block;
+        text-decoration: none;
+    }
+
+    .btn-checkout:hover {
+        background-color: #ffd966;
+        transform: scale(1.05);
+    }
+
+    .empty-cart {
+        text-align: center;
+        padding: 50px;
+        background-color: rgba(0, 0, 0, 0.75);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+</style>
+
+<body>
+    <div style="
+        background: rgba(20, 20, 40, 0.5);
+        padding: 20px;
+        border-radius: 18px;
+        color: #fff;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+        max-width: 1200px;
+        margin: 40px auto;
+    ">
+        <section class="page-title">
+            <h2>Shopping Cart</h2>
+            <p>Review and manage your selected items</p>
+        </section>
+
+        <section class="cart-container">
+            {{ if .Items }}
+                <table class="cart-table">
+                    <thead>
+                        <tr>
+                            <th>Item ID</th>
+                            <th>Description</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .Items }}
+                            <tr>
+                                <td><strong>{{ .GetProductId }}</strong></td>
+                                <td>{{ .GetDescription }}</td>
+                                <td>€{{ .GetPrice }}</td>
+                                <td>{{ .GetQuantity }}</td>
+                                <td>
+                                    <form action="/cart/remove" method="POST" style="margin: 0;">
+                                        <input type="hidden" name="product_id" value="{{ .GetProductId }}">
+                                        <button type="submit" class="btn-remove">Remove</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+
+                <div class="cart-summary">
+                    <h3>Total: <span class="total-price">€{{ .TotalPrice }}</span></h3>
+                    
+                    <form action="/checkout" method="POST" style="margin:0;">
+                        <button type="submit" class="btn-checkout">Proceed to Checkout</button>
+                    </form>
+                </div>
+            {{ else }}
+                <div class="empty-cart">
+                    <p style="font-size: 1.2rem; margin-bottom: 20px;">Your cart is empty.</p>
+                    <a href="/catalog" class="btn-checkout" style="font-size: 0.95rem; padding: 10px 20px;">Go to Catalog</a>
+                </div>
+            {{ end }}
+        </section>
+    </div>
+</body>
+
+{{template "footer" .}}
+</html>

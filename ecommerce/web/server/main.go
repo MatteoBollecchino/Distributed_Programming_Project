@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	pbAuth "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth"
+	pbCart "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/cart"
 	pbCatalog "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/catalog"
 	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/web/internal/clients"
 	"github.com/gorilla/sessions"
@@ -74,17 +75,56 @@ func (s *WebServer) productCatalogHandler(writer http.ResponseWriter, request *h
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "catalog.html", templateData))
 }
 
-func (s *WebServer) shoppingCartHandler(writer http.ResponseWriter, request *http.Request) {
-	checkerr(writer, s.templates.ExecuteTemplate(writer, "shopping_cart.html", nil))
+func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Request) {
+
+	// templateData := map[string]interface{}{
+	// "Items":      cartRes.GetItems(), // Array di elementi dal microservizio Cart
+	// "TotalPrice": totalCalculatedValue, // Calcolato ciclando nel backend
+	//}
+	checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", nil))
+}
+
+func (s *WebServer) addToCartHandler(writer http.ResponseWriter, request *http.Request) {
+	if request.Method != http.MethodPost {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// User must be logges
+	session, err := s.store.Get(request, sessionName)
+	checkerr(writer, err)
+	if loggedIn, ok := session.Values["logged_in"].(bool); !ok || !loggedIn {
+		http.Error(writer, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Retrieve user and product data
+	productId := request.FormValue("product_id")
+	username := session.Values["username"].(string)
+
+	// gRPC call at Cart service
+	_, err = s.clients.Cart.AddItemToCart(request.Context(), &pbCart.AddItemToCartRequest{
+		Username: username,
+		CartItem: &pbCart.CartItem{
+			ItemId:   productId,
+			Quantity: 1},
+	})
+
+	if err != nil {
+		log.Printf("Failed add item to cart: %v", err)
+		checkerr(writer, s.templates.ExecuteTemplate(writer, "add_to_cart.html", "Failed add item to cart"))
+		return
+	}
+
+	log.Printf("Product added successfully to cart")
+
+	// Redirection to catalog page
+	http.Redirect(writer, request, "/catalog", http.StatusSeeOther)
 }
 
 func (s *WebServer) accountHandler(writer http.ResponseWriter, request *http.Request) {
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "account.html", nil))
 }
-
-/*func (s *WebServer) registerHandler(writer http.ResponseWriter, request *http.Request) {
-	checkerr(writer, s.templates.ExecuteTemplate(writer, "register.html", nil))
-}*/
 
 func (s *WebServer) registerHandler(writer http.ResponseWriter, request *http.Request) {
 	// User GET request -> register page
@@ -106,28 +146,22 @@ func (s *WebServer) registerHandler(writer http.ResponseWriter, request *http.Re
 			return
 		}
 
-		// 4. Chiamata gRPC al microservizio Auth per creare l'utente
-		// Adatta il nome del metodo (es. Register) e della struct in base al tuo file .proto
+		// gRPC call at Auth service
 		_, err := s.clients.Auth.Register(request.Context(), &pbAuth.RegisterRequest{
 			Username: username,
 			Password: password,
 		})
 
-		// 5. Gestione errore gRPC (es: username già preso o errore del DB)
 		if err != nil {
-			log.Printf("Registrazione fallita su Auth Service per %s: %v", username, err)
-
-			// Passiamo l'errore al template per mostrarlo all'utente nella pagina
-			// Puoi mostrare un messaggio generico o estrarre lo status gRPC se vuoi fare il sofisticato
+			log.Printf("Failed Registration: %v", err)
 			checkerr(writer, s.templates.ExecuteTemplate(writer, "register.html", "Username already exists or invalid data"))
 			return
 		}
 
-		log.Printf("Nuovo utente registrato con successo: %s", username)
+		log.Printf("New user correctly registerd: %s", username)
 
-		// 6. Successo: Reindirizziamo l'utente alla pagina di login
-		// Opzionale: potresti loggarlo direttamente, ma rimandarlo al login è l'approccio standard più sicuro
-		http.Redirect(writer, request, "/login?success=Account+created", http.StatusSeeOther)
+		// Redirection to login page
+		http.Redirect(writer, request, "/login", http.StatusSeeOther)
 	}
 }
 
@@ -151,7 +185,7 @@ func (s *WebServer) loginHandler(writer http.ResponseWriter, request *http.Reque
 
 		// In case of error -> redirection to login page
 		if err != nil {
-			log.Printf("Failed Login for %s: %v", username, err)
+			log.Printf("Failed Login: %v", err)
 			http.Redirect(writer, request, "/login", http.StatusSeeOther)
 			return
 		}
@@ -172,8 +206,28 @@ func (s *WebServer) loginHandler(writer http.ResponseWriter, request *http.Reque
 		}
 
 		// Redirection to catalog page
-		http.Redirect(writer, request, "/catalog", http.StatusSeeOther)
+		http.Redirect(writer, request, "/cart", http.StatusSeeOther)
 	}
+}
+
+func (s *WebServer) logoutHandler(writer http.ResponseWriter, request *http.Request) {
+	// Retrieve current session
+	session, err := s.store.Get(request, sessionName)
+	checkerr(writer, err)
+
+	// Set MaxAge=-1 to tell the browser to delete the cookie
+	session.Options.MaxAge = -1
+
+	// Save update
+	if err := session.Save(request, writer); err != nil {
+		http.Error(writer, "Errore during logout", http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("User successfully logged out.")
+
+	// Redirecting user to welcome page
+	http.Redirect(writer, request, "/welcome", http.StatusSeeOther)
 }
 
 func main() {
@@ -197,10 +251,12 @@ func main() {
 	// Association of paths to correspondent handlers
 	mux.HandleFunc("/welcome", server.welcomeHandler)
 	mux.HandleFunc("/catalog", server.productCatalogHandler)
-	mux.HandleFunc("/shopping_cart", server.shoppingCartHandler)
+	mux.HandleFunc("/cart", server.cartHandler)
+	mux.HandleFunc("/cart/add", server.addToCartHandler)
 	mux.HandleFunc("/account", server.accountHandler)
 	mux.HandleFunc("/register", server.registerHandler)
 	mux.HandleFunc("/login", server.loginHandler)
+	mux.HandleFunc("/logout", server.logoutHandler)
 
 	log.Printf("The Web Server listening on %s", port)
 	log.Fatal(http.ListenAndServe(port, mux))
