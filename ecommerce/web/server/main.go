@@ -7,16 +7,21 @@ import (
 	"os"
 	"path/filepath"
 
+	pbAuth "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth"
 	pbCatalog "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/catalog"
 	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/web/internal/clients"
+	"github.com/gorilla/sessions"
 )
 
 var port = ":8080"
+var cookieKey = []byte("FantaEcommerce2026")
 
-// 1. Creiamo un'ambiente (Server) per fare Dependency Injection
+const sessionName = "ecommerce-session"
+
 type WebServer struct {
 	templates *template.Template
 	clients   *clients.ServiceClients
+	store     *sessions.CookieStore
 }
 
 func checkerr(writer http.ResponseWriter, err error) {
@@ -36,8 +41,6 @@ func loadTemplates() *template.Template {
 	return template.Must(template.ParseGlob(templatesPath))
 }
 
-// 2. Trasformiamo gli handler in METODI di WebServer. Ora hanno accesso a s.clients!
-
 func (s *WebServer) welcomeHandler(writer http.ResponseWriter, request *http.Request) {
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "welcome_page.html", nil))
 }
@@ -47,10 +50,25 @@ func (s *WebServer) productCatalogHandler(writer http.ResponseWriter, request *h
 	catalogRes, err := s.clients.Catalog.ListCatalogItems(request.Context(), &pbCatalog.ListCatalogItemsRequest{})
 	checkerr(writer, err)
 
+	// Get current session
+	session, err := s.store.Get(request, sessionName)
+	checkerr(writer, err)
+
+	isLoggedIn := false
+	username := ""
+
+	// checking if user is logged or not
+	if loggedIn, ok := session.Values["logged_in"].(bool); ok && loggedIn {
+		isLoggedIn = true
+		username = session.Values["username"].(string)
+	}
+
 	// Map with data to send to HTML file
 	templateData := map[string]interface{}{
-		"Title":    "Fanta Catalog",
-		"Products": catalogRes.GetItems(), // List all the products from gRPC
+		"Title":      "Fanta Catalog",
+		"Products":   catalogRes.GetItems(), // List all the products from gRPC
+		"IsLoggedIn": isLoggedIn,
+		"Username":   username,
 	}
 
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "catalog.html", templateData))
@@ -69,27 +87,69 @@ func (s *WebServer) registerHandler(writer http.ResponseWriter, request *http.Re
 }
 
 func (s *WebServer) loginHandler(writer http.ResponseWriter, request *http.Request) {
-	checkerr(writer, s.templates.ExecuteTemplate(writer, "login.html", nil))
+	// User request GET -> login page
+	if request.Method == http.MethodGet {
+		checkerr(writer, s.templates.ExecuteTemplate(writer, "login.html", nil))
+		return
+	}
+
+	// User request POST, l'utente ha sottomesso il form
+	if request.Method == http.MethodPost {
+		username := request.FormValue("username")
+		password := request.FormValue("password")
+
+		// gRPC call at Auth service
+		authRes, err := s.clients.Auth.Login(request.Context(), &pbAuth.LoginRequest{
+			Username: username,
+			Password: password,
+		})
+
+		// In case of errore -> redirection to login page
+		if err != nil {
+			// Nota: in un secondo momento potrai passare l'errore al template per mostrarlo all'utente
+			log.Printf("Failed Login for %s: %v", username, err)
+			http.Redirect(writer, request, "/login", http.StatusSeeOther)
+			return
+		}
+
+		// Session creation
+		session, _ := s.store.Get(request, sessionName)
+
+		// Save user data in the session
+		session.Values["username"] = authRes.GetUser().Username
+		session.Values["role"] = authRes.GetUser().Role
+		session.Values["logged_in"] = true
+
+		// Saving session
+		if err = session.Save(request, writer); err != nil {
+			http.Error(writer, "Errore nel salvataggio della sessione", http.StatusInternalServerError)
+			return
+		}
+
+		// Redirection to catalog page
+		http.Redirect(writer, request, "/catalog", http.StatusSeeOther)
+	}
 }
 
 func main() {
-	// Inizializza i client gRPC
+	// Initialization gRPC clients
 	clientsRegistry, err := clients.InitClients()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer clientsRegistry.Close()
 
-	// 3. Istanziamo il nostro WebServer con i template e i client
+	cookieStore := sessions.NewCookieStore(cookieKey)
+
 	server := &WebServer{
 		templates: loadTemplates(),
 		clients:   clientsRegistry,
+		store:     cookieStore,
 	}
 
-	// 4. Usiamo il Mux (consigliato dai tuoi commenti!)
 	mux := http.NewServeMux()
 
-	// Associamo i percorsi ai metodi dell'istanza 'server'
+	// Association of paths to correspondent handlers
 	mux.HandleFunc("/welcome", server.welcomeHandler)
 	mux.HandleFunc("/catalog", server.productCatalogHandler)
 	mux.HandleFunc("/shopping_cart", server.shoppingCartHandler)
@@ -98,6 +158,5 @@ func main() {
 	mux.HandleFunc("/login", server.loginHandler)
 
 	log.Printf("The Web Server listening on %s", port)
-	// Passiamo il mux personalizzato invece di nil
 	log.Fatal(http.ListenAndServe(port, mux))
 }

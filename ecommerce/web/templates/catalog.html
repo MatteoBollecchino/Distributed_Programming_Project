@@ -94,9 +94,9 @@
 
         {{ range .Products }}
             <div class="product-card">
-                <h3>{{ .Name }}</h3>
-                <div class="price">€{{ .Price }}</div>
-                <p>Description: {{ .Description }}</p>
+                <h3>{{ .GetItemId }}</h3>
+                <div class="price">€{{ .GetPrice }}</div>
+                <p>{{ .GetDescription }}</p>
                 <button>Add to Cart</button>
             </div>
         {{ else }}

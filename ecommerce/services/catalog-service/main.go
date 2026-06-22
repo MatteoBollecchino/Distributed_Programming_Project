@@ -35,8 +35,11 @@ func main() {
 		log.Fatalf("Failed to listen on port %s: %v", port, err)
 	}
 
-	// Initialize repository
+	// Initialize repository and create default users/admins
 	catalogRepo := repository.NewCatalogServiceRepository(db)
+	if err := catalogRepo.CreateDefaultProducts(); err != nil {
+		log.Fatalf("Internal errors while creating default users: %v", err)
+	}
 
 	// Initialize CatalogServer
 	catalogServer := internal.NewCatalogServer(catalogRepo)
