@@ -1,0 +1,110 @@
+{{template "header" .}}
+
+<style>
+    /* ===== Page Title ===== */
+    .page-title {
+        text-align: center;
+        padding: 60px 20px 30px;
+    }
+
+    .page-title h2 {
+        font-family: 'Cinzel', serif;
+        font-size: 2.8rem;
+        margin-bottom: 10px;
+    }
+
+    .page-title p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    /* ===== Catalog Grid ===== */
+    .catalog {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+    }
+
+    /* ===== Product Card ===== */
+    .product-card {
+        background-color: rgba(0,0,0,0.75);
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        transition: transform 0.3s;
+    }
+
+    .product-card:hover {
+        transform: translateY(-8px);
+    }
+
+    .product-card h3 {
+        color: #f5c542;
+        margin: 10px 0;
+    }
+
+    .product-card p {
+        font-size: 0.95rem;
+        opacity: 0.9;
+    }
+
+    .price {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin: 15px 0;
+    }
+
+    .product-card button {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 25px;
+        background-color: #f5c542;
+        color: #000;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .product-card button:hover {
+        background-color: #ffd966;
+        transform: scale(1.05);
+    }
+</style>
+
+<body>
+    <!-- Page Title -->
+    <section class="page-title">
+        <div style="
+            background: rgba(20, 20, 40, 0.8);
+            padding: 45px;
+            border-radius: 18px;
+            color: #fff;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+        ">
+        <h2>{{ .Title }}</h2>
+        <p>Discover legendary items from fantasy and science fiction worlds</p>
+    </section>
+
+    <!-- Product Catalog -->
+    <section class="catalog">
+
+        {{ range .Products }}
+            <div class="product-card">
+                <h3>{{ .Name }}</h3>
+                <div class="price">€{{ .Price }}</div>
+                <p>Description: {{ .Description }}</p>
+                <button>Add to Cart</button>
+            </div>
+        {{ else }}
+            <p>No product available.</p>
+        {{ end }}
+
+    </section>
+
+</body>
+
+{{template "footer" .}}
