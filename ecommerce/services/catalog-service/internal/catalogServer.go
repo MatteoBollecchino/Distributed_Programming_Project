@@ -19,8 +19,8 @@ func NewCatalogServer(repo domain.CatalogServiceInterface) *CatalogServer {
 	return &CatalogServer{repo: repo}
 }
 
-// AddItemToCart adds an item to the cart of a specific user.
-func (s *CatalogServer) AddItemToCart(ctx context.Context, req *pb.AddCatalogItemRequest) (*pb.AddCatalogItemResponse, error) {
+// AddCatalogItem adds an item to catalog.
+func (s *CatalogServer) AddCatalogItem(ctx context.Context, req *pb.AddCatalogItemRequest) (*pb.AddCatalogItemResponse, error) {
 
 	if req.Item.ItemId == "" || req.Item.Description == "" || req.Item == nil {
 		return &pb.AddCatalogItemResponse{

@@ -61,8 +61,7 @@ func (s *AuthServer) ChangePassword(ctx context.Context, req *pb.ChangePasswordR
 		return &pb.ChangePasswordResponse{ErrorMessage: err.Error()}, err
 	}
 
-	err := s.repo.ChangePassword(req.Username, req.OldPassword, req.NewPassword)
-	if err != nil {
+	if err := s.repo.ChangePassword(req.Username, req.OldPassword, req.NewPassword); err != nil {
 		return &pb.ChangePasswordResponse{ErrorMessage: err.Error()}, err
 	}
 	return &pb.ChangePasswordResponse{}, nil

@@ -155,13 +155,13 @@
                     <tbody>
                         {{ range .Items }}
                             <tr>
-                                <td><strong>{{ .GetProductId }}</strong></td>
+                                <td><strong>{{ .GetItemId}}</strong></td>
                                 <td>{{ .GetDescription }}</td>
                                 <td>€{{ .GetPrice }}</td>
                                 <td>{{ .GetQuantity }}</td>
                                 <td>
                                     <form action="/cart/remove" method="POST" style="margin: 0;">
-                                        <input type="hidden" name="product_id" value="{{ .GetProductId }}">
+                                        <input type="hidden" name="product_id" value="{{ .GetItemId }}">
                                         <button type="submit" class="btn-remove">Remove</button>
                                     </form>
                                 </td>

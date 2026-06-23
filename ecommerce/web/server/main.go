@@ -76,12 +76,49 @@ func (s *WebServer) productCatalogHandler(writer http.ResponseWriter, request *h
 }
 
 func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Request) {
+	// Only GET requests are accepted
+	if request.Method != http.MethodGet {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 
-	// templateData := map[string]interface{}{
-	// "Items":      cartRes.GetItems(), // Array di elementi dal microservizio Cart
-	// "TotalPrice": totalCalculatedValue, // Calcolato ciclando nel backend
-	//}
-	checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", nil))
+	// Retrieve session
+	session, err := s.store.Get(request, sessionName)
+	checkerr(writer, err)
+
+	// Checking if user is logged
+	loggedIn, ok := session.Values["logged_in"].(bool)
+	if !ok || !loggedIn {
+		// Redirection to login page
+		http.Redirect(writer, request, "/login", http.StatusSeeOther)
+		return
+	}
+	username := session.Values["username"].(string)
+
+	// Calling cart service via gRPC
+	cartRes, err := s.clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{
+		Username: username,
+	})
+
+	if err != nil {
+		log.Printf("Impossible to retrieve shopping cart for %s: %v", username, err)
+		http.Error(writer, "Error in retrieving user cart", http.StatusInternalServerError)
+		return
+	}
+
+	// Calculating total price
+	var totalPrice float64
+	for _, item := range cartRes.GetCart().GetItems() {
+		totalPrice += float64(item.GetQuantity()) * float64(item.GetPrice())
+	}
+
+	// Mapping data for HTML file
+	templateData := map[string]interface{}{
+		"Items":      cartRes.GetCart().GetItems(),
+		"TotalPrice": totalPrice,
+	}
+
+	checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", templateData))
 }
 
 func (s *WebServer) addToCartHandler(writer http.ResponseWriter, request *http.Request) {
@@ -118,8 +155,8 @@ func (s *WebServer) addToCartHandler(writer http.ResponseWriter, request *http.R
 
 	log.Printf("Product added successfully to cart")
 
-	// Redirection to catalog page
-	http.Redirect(writer, request, "/catalog", http.StatusSeeOther)
+	// Redirection to shopping cart page
+	http.Redirect(writer, request, "/cart", http.StatusSeeOther)
 }
 
 func (s *WebServer) accountHandler(writer http.ResponseWriter, request *http.Request) {
@@ -213,7 +250,8 @@ func (s *WebServer) loginHandler(writer http.ResponseWriter, request *http.Reque
 		// In case of error -> redirection to login page
 		if err != nil {
 			log.Printf("Failed Login: %v", err)
-			http.Redirect(writer, request, "/login", http.StatusSeeOther)
+			checkerr(writer, s.templates.ExecuteTemplate(writer, "login.html", "Username or password are not valid"))
+			//http.Redirect(writer, request, "/login", http.StatusSeeOther)
 			return
 		}
 
