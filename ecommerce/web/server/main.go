@@ -11,6 +11,7 @@ import (
 	pbAuth "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth"
 	pbCart "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/cart"
 	pbCatalog "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/catalog"
+	pbOrder "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/order"
 	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/web/internal/clients"
 	"github.com/gorilla/sessions"
 )
@@ -125,7 +126,15 @@ func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Reques
 		"TotalPrice": totalPrice,
 	}
 
-	checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", templateData))
+	// Checking the type of action in the URL
+	action := request.URL.Query().Get("action")
+
+	// In case of checkout we switch to the order page
+	if action == "order" {
+		checkerr(writer, s.templates.ExecuteTemplate(writer, "order.html", templateData))
+	} else {
+		checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", templateData))
+	}
 }
 
 func (s *WebServer) addToCartHandler(writer http.ResponseWriter, request *http.Request) {
@@ -224,6 +233,7 @@ func (s *WebServer) removeFromCartHandler(writer http.ResponseWriter, request *h
 }
 
 // ORDER PAGE HANLDER ///////////////////////////////////////////////////////////////
+
 func (s *WebServer) orderHandler(writer http.ResponseWriter, request *http.Request) {
 	// Only POST requests are accepted
 	if request.Method != http.MethodPost {
@@ -238,27 +248,45 @@ func (s *WebServer) orderHandler(writer http.ResponseWriter, request *http.Reque
 		http.Error(writer, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-
-	// Retrieve user and product data
-	productId := request.FormValue("product_id")
 	username := session.Values["username"].(string)
 
-	// gRPC call at Cart service
-	_, err = s.clients.Cart.RemoveItemFromCart(request.Context(), &pbCart.RemoveItemFromCartRequest{
+	// Retrieve cart
+	cartRes, err := s.clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{
 		Username: username,
-		ItemId:   productId,
 	})
-
 	if err != nil {
-		log.Printf("Failed remove item from cart: %v", err)
-		checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", "Failed remove item from cart"))
+		log.Printf("Impossible to retrieve shopping cart for %s: %v", username, err)
+		http.Error(writer, "Error in retrieving user cart", http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("Product removed successfully from cart")
+	// Convert CartItme in OrderItem
+	var orderItems []*pbOrder.OrderItem
+	for _, cartItem := range cartRes.GetCart().GetItems() {
+		orderItems = append(orderItems, &pbOrder.OrderItem{
+			ItemId:   cartItem.GetItemId(),
+			Quantity: cartItem.GetQuantity(),
+			Price:    cartItem.GetPrice(),
+		})
+	}
 
-	// Redirection to shopping cart page
-	http.Redirect(writer, request, "/cart", http.StatusSeeOther)
+	// gRPC call at Order service
+	_, err = s.clients.Order.CreateOrder(request.Context(), &pbOrder.CreateOrderRequest{
+		UserId:     username,
+		OrderItems: orderItems,
+	})
+	if err != nil {
+		log.Printf("Error during order creation for %s: %v", username, err)
+		http.Error(writer, "Error during order creation", http.StatusInternalServerError)
+		return
+	}
+
+	// Clearing cart after creating the order
+	_, err = s.clients.Cart.ClearCart(request.Context(), &pbCart.ClearCartRequest{Username: username})
+
+	// Redirect to payment page
+	log.Printf("Order successfully created for: %s", username)
+	http.Redirect(writer, request, "/payment", http.StatusSeeOther)
 }
 
 // AUTHETIFICATION PAGE HANDLERS ///////////////////////////////////////////////////////////////

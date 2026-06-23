@@ -18,6 +18,7 @@ endif
 # ==========================
 SERVICES_DIR=services
 TESTS_DIR=internal/tests
+WEB_DIR=web
 PROTOC=protoc
 GO=go
 
@@ -39,10 +40,10 @@ run-all:
 	cd $(SERVICES_DIR)/payment-service && go run main.go &
 	@echo "All services are running."
 
-# Logica condizionale spostata FUORI dal target per non rompere il parsing di Make
 run-all-tabs:
 	@echo "Starting services in different tabs..."
 ifeq ($(OS),windows)
+	@start "Web Server" cmd /k "cd $(CURDIR)\$(WEB_DIR)\server && $(GO) run main.go"
 	@start "Auth Service" cmd /k "cd $(CURDIR)\$(SERVICES_DIR)\auth-service && $(GO) run main.go"
 	@start "Cart Service" cmd /k "cd $(CURDIR)\$(SERVICES_DIR)\cart-service && $(GO) run main.go"
 	@start "Catalog Service" cmd /k "cd $(CURDIR)\$(SERVICES_DIR)\catalog-service && $(GO) run main.go"
@@ -51,6 +52,7 @@ ifeq ($(OS),windows)
 else
 ifeq ($(shell uname),Linux)
 	@echo "Starting services in GNOME Terminal tabs..."
+	@gnome-terminal --tab --title="Web" -- bash -c "cd $(CURDIR)/$(WEB_DIR)/server && $(GO) run main.go; exec bash"
 	@gnome-terminal --tab --title="Auth" -- bash -c "cd $(CURDIR)/$(SERVICES_DIR)/auth-service && $(GO) run main.go; exec bash"
 	@gnome-terminal --tab --title="Cart" -- bash -c "cd $(CURDIR)/$(SERVICES_DIR)/cart-service && $(GO) run main.go; exec bash"
 	@gnome-terminal --tab --title="Catalog" -- bash -c "cd $(CURDIR)/$(SERVICES_DIR)/catalog-service && $(GO) run main.go; exec bash"

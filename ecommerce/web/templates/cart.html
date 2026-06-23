@@ -1,23 +1,6 @@
 {{template "header" .}}
 
 <style>
-    /* ===== Page Title ===== */
-    .page-title {
-        text-align: center;
-        padding: 40px 20px 20px;
-    }
-
-    .page-title h2 {
-        font-family: 'Cinzel', serif;
-        font-size: 2.8rem;
-        margin-bottom: 10px;
-        color: #f5c542;
-    }
-
-    .page-title p {
-        font-size: 1.1rem;
-        opacity: 0.9;
-    }
 
     /* ===== Cart Container ===== */
     .cart-container {
@@ -171,8 +154,8 @@
                 <div class="cart-summary">
                     <h3>Total: <span class="total-price">€{{ .TotalPrice }}</span></h3>
                     
-                    <form action="/order" method="POST" style="margin:0;">
-                        <button type="submit" class="btn-checkout">Proceed to Checkout</button>
+                    <form action="/order" method="POST" style="margin: 0;">
+                        <button type="submit" class="btn-checkout">Checkout</button>
                     </form>
                 </div>
             {{ else }}

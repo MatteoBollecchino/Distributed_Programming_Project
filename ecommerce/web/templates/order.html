@@ -1,0 +1,228 @@
+{{template "header" .}}
+
+<style>
+
+    /* ===== Checkout Layout ===== */
+    .checkout-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        display: flex;
+        gap: 30px;
+    }
+
+    /* ===== Left: Form Section ===== */
+    .checkout-form-section {
+        flex: 1.4;
+        background-color: rgba(0, 0, 0, 0.75);
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+
+    /* ===== Right: Summary Section ===== */
+    .order-summary-section {
+        flex: 1;
+        background-color: rgba(20, 20, 40, 0.8);
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        height: fit-content;
+    }
+
+    h3 {
+        font-family: 'Cinzel', serif;
+        color: #f5c542;
+        font-size: 1.4rem;
+        margin-top: 0;
+        margin-bottom: 25px;
+        border-bottom: 1px solid rgba(245, 197, 66, 0.3);
+        padding-bottom: 10px;
+    }
+
+    /* ===== Inputs & Forms ===== */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        color: #ccc;
+    }
+
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 12px 15px;
+        box-sizing: border-box;
+        background-color: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: white;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .form-group input:focus, .form-group select:focus {
+        border-color: #f5c542;
+        outline: none;
+    }
+
+    /* ===== Summary Items List ===== */
+    .summary-list {
+        margin-bottom: 20px;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 12px 0;
+    }
+
+    .summary-item:last-child {
+        border-bottom: none;
+    }
+
+    .item-info h4 {
+        margin: 0;
+        color: #fff;
+        font-size: 1.05rem;
+    }
+
+    .item-info p {
+        margin: 5px 0 0 0;
+        font-size: 0.85rem;
+        color: #aaa;
+    }
+
+    .item-price {
+        font-weight: bold;
+        color: #f5c542;
+    }
+
+    /* ===== Total Display ===== */
+    .total-box {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 2px dashed #f5c542;
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.6rem;
+        font-weight: bold;
+    }
+
+    /* ===== Checkout Button ===== */
+    .btn-submit-order {
+        padding: 14px 35px;
+        border: none;
+        border-radius: 25px;
+        background-color: #f5c542;
+        color: #000;
+        font-weight: bold;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 15px;
+        display: inline-block;
+        text-decoration: none;
+    }
+
+    .btn-submit-order:hover {
+        background-color: #ffd966;
+        transform: scale(1.05);
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-bottom: 15px;
+        color: #f5c542;
+        text-decoration: none;
+        font-size: 0.95rem;
+        transition: opacity 0.2s;
+    }
+
+    .back-link:hover {
+        opacity: 0.8;
+    }
+</style>
+
+<body>
+    <div style="
+        background: rgba(20, 20, 40, 0.5);
+        padding: 20px;
+        border-radius: 18px;
+        color: #fff;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+        max-width: 1200px;
+        margin: 40px auto;
+    ">
+        <section class="page-title">
+            <h2>Checkout</h2>
+            <p>Provide your details to complete the order</p>
+        </section>
+
+        <div class="checkout-container">
+            
+            <div class="checkout-form-section">
+                <a href="/cart" class="back-link">← Back to Cart</a>
+                
+                <h3>Shipping Information</h3>
+                <form action="/order" method="POST">
+                    
+                    <div class="form-group">
+                        <label for="fullname">Full Name</label>
+                        <input type="text" id="fullname" name="fullname" required placeholder="John Doe">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">Address</label>
+                        <input type="text" id="address" name="address" required placeholder="123 Main Street">
+                    </div>
+
+                    <h3 style="margin-top: 40px;">Payment Method</h3>
+                    <div class="form-group">
+                        <label for="payment_method">Select Payment Option</label>
+                        <select id="payment_method" name="payment_method">
+                            <option value="credit_card">Credit / Debit Card</option>
+                            <option value="paypal">PayPal</option>
+                        </select>
+                    </div>
+
+                    <a href="/payment" class="btn-submit-order">Proceed to Pay</a>
+                </form>
+            </div>
+
+            <div class="order-summary-section">
+                <h3>Order Summary</h3>
+                
+                <div class="summary-list">
+                    {{ range .Items }}
+                        <div class="summary-item">
+                            <div class="item-info">
+                                <h4>{{ .GetItemId }}</h4>
+                                <p>Qty: {{ .GetQuantity }} × €{{ .GetPrice }}</p>
+                            </div>
+                            <div class="item-price">
+                                €{{ .GetPrice }}
+                            </div>
+                        </div>
+                    {{ else }}
+                        <p style="text-align: center; opacity: 0.6; padding: 20px 0;">No items to purchase.</p>
+                    {{ end }}
+                </div>
+
+                <div class="total-box">
+                    <span>Total:</span>
+                    <span style="color: #f5c542;">€{{ .TotalPrice }}</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+
+{{template "footer" .}}
+</html>
