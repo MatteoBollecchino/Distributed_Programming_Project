@@ -90,7 +90,7 @@ func (s *WebServer) addToCartHandler(writer http.ResponseWriter, request *http.R
 		return
 	}
 
-	// User must be logges
+	// User must be logged
 	session, err := s.store.Get(request, sessionName)
 	checkerr(writer, err)
 	if loggedIn, ok := session.Values["logged_in"].(bool); !ok || !loggedIn {
@@ -123,7 +123,34 @@ func (s *WebServer) addToCartHandler(writer http.ResponseWriter, request *http.R
 }
 
 func (s *WebServer) accountHandler(writer http.ResponseWriter, request *http.Request) {
-	checkerr(writer, s.templates.ExecuteTemplate(writer, "account.html", nil))
+	// Only GET requests are permitted
+	if request.Method != http.MethodGet {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Retrieve session
+	session, err := s.store.Get(request, sessionName)
+	checkerr(writer, err)
+
+	// Check if user is logged
+	if loggedIn, ok := session.Values["logged_in"].(bool); !ok || !loggedIn {
+		// User not logged -> Redirection to login page
+		http.Redirect(writer, request, "/login", http.StatusSeeOther)
+		return
+	}
+
+	// Extraction of user data
+	username, _ := session.Values["username"].(string)
+	role, _ := session.Values["role"].(string)
+
+	// Preparing user data for HTML template
+	templateData := map[string]interface{}{
+		"Username": username,
+		"Role":     role,
+	}
+
+	checkerr(writer, s.templates.ExecuteTemplate(writer, "account.html", templateData))
 }
 
 func (s *WebServer) registerHandler(writer http.ResponseWriter, request *http.Request) {
@@ -218,7 +245,7 @@ func (s *WebServer) logoutHandler(writer http.ResponseWriter, request *http.Requ
 	// Set MaxAge=-1 to tell the browser to delete the cookie
 	session.Options.MaxAge = -1
 
-	// Save update
+	// Save update of the session
 	if err := session.Save(request, writer); err != nil {
 		http.Error(writer, "Errore during logout", http.StatusInternalServerError)
 		return

@@ -4,13 +4,14 @@
     /* ===== Page Title ===== */
     .page-title {
         text-align: center;
-        padding: 60px 20px 30px;
+        padding: 40px 20px 20px;
     }
 
     .page-title h2 {
         font-family: 'Cinzel', serif;
         font-size: 2.8rem;
         margin-bottom: 10px;
+        color: #f5c542; /* Colore dorato per coerenza */
     }
 
     .page-title p {
@@ -18,14 +19,73 @@
         opacity: 0.9;
     }
 
-    /* ===== Catalog Grid ===== */
-    .catalog {
-        max-width: 1200px;
+    /* ===== Profile Card ===== */
+    .profile-container {
+        max-width: 600px;
         margin: 0 auto;
-        padding: 40px 20px;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 30px;
+        padding: 20px;
+    }
+
+    .profile-card {
+        background-color: rgba(0,0,0,0.75);
+        border-radius: 16px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        text-align: center;
+    }
+
+    .profile-card h3 {
+        color: #f5c542;
+        font-family: 'Cinzel', serif;
+        font-size: 1.8rem;
+        margin-top: 0;
+        margin-bottom: 25px;
+        border-bottom: 1px solid rgba(245, 197, 66, 0.3);
+        padding-bottom: 15px;
+    }
+
+    /* ===== User Info Rows ===== */
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 15px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 1.1rem;
+    }
+
+    .info-row:last-of-type {
+        border-bottom: none;
+        margin-bottom: 30px;
+    }
+
+    .info-label {
+        font-weight: bold;
+        color: #aaaaaa;
+    }
+
+    .info-value {
+        color: #ffffff;
+        font-weight: 500;
+    }
+
+    /* ===== Logout Button ===== */
+    .btn-logout {
+        display: inline-block;
+        padding: 14px 40px;
+        background-color: transparent;
+        color: #dc3545; /* Rosso per indicare un'azione distruttiva/di uscita */
+        border: 2px solid #dc3545;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 25px;
+        transition: all 0.3s;
+        font-size: 1.1rem;
+    }
+
+    .btn-logout:hover {
+        background-color: #dc3545;
+        color: #fff;
+        transform: scale(1.05);
     }
 </style>
 
@@ -37,19 +97,35 @@
             border-radius: 18px;
             color: #fff;
             box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+            max-width: 800px;
+            margin: 40px auto;
         ">
 
-    <!-- Page Title -->
-    <section class="page-title">
-        <h2>Account</h2>
-        <p>Manage your account settings and preferences</p>
-    </section>
+        <section class="page-title">
+            <h2>Account</h2>
+            <p>Manage your account settings and preferences</p>
+        </section>
 
-    <!-- Account Details -->
-    <section class="catalog">
-        <!-- Account information and settings would go here --> 
-    </section>
+        <section class="profile-container">
+            <div class="profile-card">
+                <h3>My Profile</h3>
+                
+                <div class="info-row">
+                    <span class="info-label">Username:</span>
+                    <span class="info-value">{{ .Username }}</span>
+                </div>
+                
+                {{ if .Role }}
+                <div class="info-row">
+                    <span class="info-label">Role:</span>
+                    <span class="info-value" style="text-transform: capitalize;">{{ .Role }}</span>
+                </div>
+                {{ end }}
 
-</body>
+                <a href="/logout" class="btn-logout">Log Out</a>
+            </div>
+        </section>
+
+    </div> </body>
 
 {{template "footer" .}}

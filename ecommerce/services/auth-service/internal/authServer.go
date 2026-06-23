@@ -31,7 +31,13 @@ func (s *AuthServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Login
 	if err != nil {
 		return &pb.LoginResponse{User: nil, ErrorMessage: err.Error()}, err
 	}
-	return &pb.LoginResponse{User: &pb.User{Username: user.Username}}, nil
+
+	return &pb.LoginResponse{
+		User: &pb.User{
+			Username: user.Username,
+			Role:     user.Role,
+		},
+	}, nil
 }
 
 // Register creates a new user account with the provided info.

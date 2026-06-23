@@ -139,8 +139,8 @@ func (r *AuthRepository) CreateAdmin(username, password string) error {
 	if err := checkCredetials(username, password); err != nil {
 		return err
 	}
-	err := uniqueUsername(r.db, username)
-	if err != nil {
+
+	if err := uniqueUsername(r.db, username); err != nil {
 		return err
 	}
 
@@ -149,6 +149,7 @@ func (r *AuthRepository) CreateAdmin(username, password string) error {
 	if err != nil {
 		return err
 	}
+
 	user := domain.User{Username: username, Password: hashedPassword, Role: domain.AdminRole}
 	return r.db.Create(&user).Error
 }
