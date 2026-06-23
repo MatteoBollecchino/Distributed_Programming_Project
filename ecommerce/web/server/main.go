@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	pbAuth "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth"
 	pbCart "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/cart"
@@ -42,9 +43,13 @@ func loadTemplates() *template.Template {
 	return template.Must(template.ParseGlob(templatesPath))
 }
 
+// WELCOME PAGE HANDLER ///////////////////////////////////////////////////////////////
+
 func (s *WebServer) welcomeHandler(writer http.ResponseWriter, request *http.Request) {
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "welcome_page.html", nil))
 }
+
+// CATALOG PAGE HANDLER ///////////////////////////////////////////////////////////////
 
 func (s *WebServer) productCatalogHandler(writer http.ResponseWriter, request *http.Request) {
 	// Request products from the catalog microservice via gRPC using s.clients
@@ -75,6 +80,8 @@ func (s *WebServer) productCatalogHandler(writer http.ResponseWriter, request *h
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "catalog.html", templateData))
 }
 
+// CART PAGE HANLDERS ///////////////////////////////////////////////////////////////
+
 func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Request) {
 	// Only GET requests are accepted
 	if request.Method != http.MethodGet {
@@ -87,8 +94,7 @@ func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Reques
 	checkerr(writer, err)
 
 	// Checking if user is logged
-	loggedIn, ok := session.Values["logged_in"].(bool)
-	if !ok || !loggedIn {
+	if loggedIn, ok := session.Values["logged_in"].(bool); !ok || !loggedIn {
 		// Redirection to login page
 		http.Redirect(writer, request, "/login", http.StatusSeeOther)
 		return
@@ -102,7 +108,8 @@ func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Reques
 
 	if err != nil {
 		log.Printf("Impossible to retrieve shopping cart for %s: %v", username, err)
-		http.Error(writer, "Error in retrieving user cart", http.StatusInternalServerError)
+		//http.Error(writer, "Error in retrieving user cart", http.StatusInternalServerError)
+		checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", nil))
 		return
 	}
 
@@ -122,6 +129,65 @@ func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Reques
 }
 
 func (s *WebServer) addToCartHandler(writer http.ResponseWriter, request *http.Request) {
+	// Only POST requests are accepted
+	if request.Method != http.MethodPost {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// User must be logged
+	session, err := s.store.Get(request, sessionName)
+	checkerr(writer, err)
+	if loggedIn, ok := session.Values["logged_in"].(bool); !ok || !loggedIn {
+		http.Error(writer, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Retrieve user and product data
+	productId := request.FormValue("product_id")
+	priceStr := request.FormValue("price")
+	username := session.Values["username"].(string)
+	quantityStr := request.FormValue("quantity")
+
+	// Price conversion
+	price, err := strconv.ParseFloat(priceStr, 64)
+	if err != nil {
+		log.Printf("Error in price conversion '%s': %v", priceStr, err)
+		http.Error(writer, "Price not valid", http.StatusBadRequest)
+		return
+	}
+
+	// Quantity Conversion
+	quantity, err := strconv.Atoi(quantityStr)
+	if err != nil || quantity < 1 {
+		log.Printf("Error in quantity conversion '%s': %v", quantityStr, err)
+		http.Error(writer, "Quantity not valid", http.StatusBadRequest)
+		return
+	}
+
+	// gRPC call at Cart service
+	_, err = s.clients.Cart.AddItemToCart(request.Context(), &pbCart.AddItemToCartRequest{
+		Username: username,
+		CartItem: &pbCart.CartItem{
+			ItemId:   productId,
+			Price:    float64(price),
+			Quantity: uint32(quantity)},
+	})
+
+	if err != nil {
+		log.Printf("Failed add item to cart: %v", err)
+		checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", "Failed add item to cart"))
+		return
+	}
+
+	log.Printf("Product added successfully to cart")
+
+	// Redirection to shopping cart page
+	http.Redirect(writer, request, "/cart", http.StatusSeeOther)
+}
+
+func (s *WebServer) removeFromCartHandler(writer http.ResponseWriter, request *http.Request) {
+	// Only POST requests are accepted
 	if request.Method != http.MethodPost {
 		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -140,24 +206,62 @@ func (s *WebServer) addToCartHandler(writer http.ResponseWriter, request *http.R
 	username := session.Values["username"].(string)
 
 	// gRPC call at Cart service
-	_, err = s.clients.Cart.AddItemToCart(request.Context(), &pbCart.AddItemToCartRequest{
+	_, err = s.clients.Cart.RemoveItemFromCart(request.Context(), &pbCart.RemoveItemFromCartRequest{
 		Username: username,
-		CartItem: &pbCart.CartItem{
-			ItemId:   productId,
-			Quantity: 1},
+		ItemId:   productId,
 	})
 
 	if err != nil {
-		log.Printf("Failed add item to cart: %v", err)
-		checkerr(writer, s.templates.ExecuteTemplate(writer, "add_to_cart.html", "Failed add item to cart"))
+		log.Printf("Failed remove item from cart: %v", err)
+		checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", "Failed remove item from cart"))
 		return
 	}
 
-	log.Printf("Product added successfully to cart")
+	log.Printf("Product removed successfully from cart")
 
 	// Redirection to shopping cart page
 	http.Redirect(writer, request, "/cart", http.StatusSeeOther)
 }
+
+// ORDER PAGE HANLDER ///////////////////////////////////////////////////////////////
+func (s *WebServer) orderHandler(writer http.ResponseWriter, request *http.Request) {
+	// Only POST requests are accepted
+	if request.Method != http.MethodPost {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// User must be logged
+	session, err := s.store.Get(request, sessionName)
+	checkerr(writer, err)
+	if loggedIn, ok := session.Values["logged_in"].(bool); !ok || !loggedIn {
+		http.Error(writer, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Retrieve user and product data
+	productId := request.FormValue("product_id")
+	username := session.Values["username"].(string)
+
+	// gRPC call at Cart service
+	_, err = s.clients.Cart.RemoveItemFromCart(request.Context(), &pbCart.RemoveItemFromCartRequest{
+		Username: username,
+		ItemId:   productId,
+	})
+
+	if err != nil {
+		log.Printf("Failed remove item from cart: %v", err)
+		checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", "Failed remove item from cart"))
+		return
+	}
+
+	log.Printf("Product removed successfully from cart")
+
+	// Redirection to shopping cart page
+	http.Redirect(writer, request, "/cart", http.StatusSeeOther)
+}
+
+// AUTHETIFICATION PAGE HANDLERS ///////////////////////////////////////////////////////////////
 
 func (s *WebServer) accountHandler(writer http.ResponseWriter, request *http.Request) {
 	// Only GET requests are permitted
@@ -295,6 +399,8 @@ func (s *WebServer) logoutHandler(writer http.ResponseWriter, request *http.Requ
 	http.Redirect(writer, request, "/welcome", http.StatusSeeOther)
 }
 
+// MAIN ///////////////////////////////////////////////////////////////
+
 func main() {
 	// Initialization gRPC clients
 	clientsRegistry, err := clients.InitClients()
@@ -303,8 +409,10 @@ func main() {
 	}
 	defer clientsRegistry.Close()
 
+	// Cookies creation
 	cookieStore := sessions.NewCookieStore(cookieKey)
 
+	// Web server creation
 	server := &WebServer{
 		templates: loadTemplates(),
 		clients:   clientsRegistry,
@@ -318,6 +426,8 @@ func main() {
 	mux.HandleFunc("/catalog", server.productCatalogHandler)
 	mux.HandleFunc("/cart", server.cartHandler)
 	mux.HandleFunc("/cart/add", server.addToCartHandler)
+	mux.HandleFunc("/cart/remove", server.removeFromCartHandler)
+	mux.HandleFunc("/order", server.orderHandler)
 	mux.HandleFunc("/account", server.accountHandler)
 	mux.HandleFunc("/register", server.registerHandler)
 	mux.HandleFunc("/login", server.loginHandler)
