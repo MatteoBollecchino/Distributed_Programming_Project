@@ -44,6 +44,16 @@ func loadTemplates() *template.Template {
 	return template.Must(template.ParseGlob(templatesPath))
 }
 
+func checkIfUserIsLogged(s *WebServer, request *http.Request, writer http.ResponseWriter) (*sessions.Session, bool) {
+	session, err := s.store.Get(request, sessionName)
+	checkerr(writer, err)
+	if loggedIn, ok := session.Values["logged_in"].(bool); !ok || !loggedIn {
+		http.Error(writer, "Unauthorized", http.StatusUnauthorized)
+		return nil, false
+	}
+	return session, true
+}
+
 // WELCOME PAGE HANDLER ///////////////////////////////////////////////////////////////
 
 func (s *WebServer) welcomeHandler(writer http.ResponseWriter, request *http.Request) {
@@ -81,7 +91,7 @@ func (s *WebServer) productCatalogHandler(writer http.ResponseWriter, request *h
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "catalog.html", templateData))
 }
 
-// CART PAGE HANLDERS ///////////////////////////////////////////////////////////////
+// CART PAGE HANDLERS ///////////////////////////////////////////////////////////////
 
 func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Request) {
 	// Only GET requests are accepted
@@ -126,15 +136,7 @@ func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Reques
 		"TotalPrice": totalPrice,
 	}
 
-	// Checking the type of action in the URL
-	action := request.URL.Query().Get("action")
-
-	// In case of checkout we switch to the order page
-	if action == "order" {
-		checkerr(writer, s.templates.ExecuteTemplate(writer, "order.html", templateData))
-	} else {
-		checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", templateData))
-	}
+	checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", templateData))
 }
 
 func (s *WebServer) addToCartHandler(writer http.ResponseWriter, request *http.Request) {
@@ -145,10 +147,8 @@ func (s *WebServer) addToCartHandler(writer http.ResponseWriter, request *http.R
 	}
 
 	// User must be logged
-	session, err := s.store.Get(request, sessionName)
-	checkerr(writer, err)
-	if loggedIn, ok := session.Values["logged_in"].(bool); !ok || !loggedIn {
-		http.Error(writer, "Unauthorized", http.StatusUnauthorized)
+	session, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
 		return
 	}
 
@@ -203,10 +203,8 @@ func (s *WebServer) removeFromCartHandler(writer http.ResponseWriter, request *h
 	}
 
 	// User must be logged
-	session, err := s.store.Get(request, sessionName)
-	checkerr(writer, err)
-	if loggedIn, ok := session.Values["logged_in"].(bool); !ok || !loggedIn {
-		http.Error(writer, "Unauthorized", http.StatusUnauthorized)
+	session, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
 		return
 	}
 
@@ -215,7 +213,7 @@ func (s *WebServer) removeFromCartHandler(writer http.ResponseWriter, request *h
 	username := session.Values["username"].(string)
 
 	// gRPC call at Cart service
-	_, err = s.clients.Cart.RemoveItemFromCart(request.Context(), &pbCart.RemoveItemFromCartRequest{
+	_, err := s.clients.Cart.RemoveItemFromCart(request.Context(), &pbCart.RemoveItemFromCartRequest{
 		Username: username,
 		ItemId:   productId,
 	})
@@ -232,20 +230,55 @@ func (s *WebServer) removeFromCartHandler(writer http.ResponseWriter, request *h
 	http.Redirect(writer, request, "/cart", http.StatusSeeOther)
 }
 
-// ORDER PAGE HANLDER ///////////////////////////////////////////////////////////////
+// ORDER PAGE HANDLER ///////////////////////////////////////////////////////////////
 
 func (s *WebServer) orderHandler(writer http.ResponseWriter, request *http.Request) {
-	// Only POST requests are accepted
-	if request.Method != http.MethodPost {
+	if request.Method != http.MethodGet {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	session, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
+		return
+	}
+	username := session.Values["username"].(string)
+
+	// 1. Recupera il carrello dal Cart Service
+	cartRes, err := s.clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{
+		Username: username,
+	})
+	if err != nil {
+		log.Printf("Impossible to retrieve shopping cart for %s: %v", username, err)
+		http.Error(writer, "Error in retrieving user cart", http.StatusInternalServerError)
+		return
+	}
+
+	// 2. Calcola il totale in Go per il template (Risolve il problema del <nil>)
+	var totalPrice float64
+	for _, item := range cartRes.GetCart().GetItems() {
+		totalPrice += float64(item.GetQuantity()) * float64(item.GetPrice())
+	}
+
+	// 3. Mappa i dati per order.html
+	templateData := map[string]interface{}{
+		"Items":      cartRes.GetCart().GetItems(),
+		"TotalPrice": totalPrice, // Ora valorizzato correttamente!
+	}
+
+	checkerr(writer, s.templates.ExecuteTemplate(writer, "order.html", templateData))
+}
+
+/*func (s *WebServer) orderHandler(writer http.ResponseWriter, request *http.Request) {
+	// Only GET requests are accepted
+	if request.Method != http.MethodGet {
 		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	// User must be logged
-	session, err := s.store.Get(request, sessionName)
-	checkerr(writer, err)
-	if loggedIn, ok := session.Values["logged_in"].(bool); !ok || !loggedIn {
-		http.Error(writer, "Unauthorized", http.StatusUnauthorized)
+	session, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
 		return
 	}
 	username := session.Values["username"].(string)
@@ -260,7 +293,7 @@ func (s *WebServer) orderHandler(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	// Convert CartItme in OrderItem
+	// Convert CartItem in OrderItem
 	var orderItems []*pbOrder.OrderItem
 	for _, cartItem := range cartRes.GetCart().GetItems() {
 		orderItems = append(orderItems, &pbOrder.OrderItem{
@@ -271,7 +304,7 @@ func (s *WebServer) orderHandler(writer http.ResponseWriter, request *http.Reque
 	}
 
 	// gRPC call at Order service
-	_, err = s.clients.Order.CreateOrder(request.Context(), &pbOrder.CreateOrderRequest{
+	orderId, err := s.clients.Order.CreateOrder(request.Context(), &pbOrder.CreateOrderRequest{
 		UserId:     username,
 		OrderItems: orderItems,
 	})
@@ -282,11 +315,157 @@ func (s *WebServer) orderHandler(writer http.ResponseWriter, request *http.Reque
 	}
 
 	// Clearing cart after creating the order
+	// _, err = s.clients.Cart.ClearCart(request.Context(), &pbCart.ClearCartRequest{Username: username})
+
+	totalPrice, err := s.clients.Order.GetOrderPrice(request.Context(), &pbOrder.GetOrderPriceRequest{
+		OrderId: orderId.String(),
+	})
+	checkerr(writer, err)
+
+	// Mapping data for HTML file
+	templateData := map[string]interface{}{
+		"Items":      cartRes.GetCart().GetItems(),
+		"TotalPrice": totalPrice,
+	}
+
+	log.Printf("Order successfully created for: %s", username)
+	checkerr(writer, s.templates.ExecuteTemplate(writer, "order.html", templateData))
+}*/
+
+// PAYMENT PAGE HANDLER ///////////////////////////////////////////////////////////////
+
+/*func (s *WebServer) paymentHandler(writer http.ResponseWriter, request *http.Request) {
+	// Only POST requests are accepted
+	if request.Method != http.MethodPost {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// User must be logged
+	_, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
+		return
+	}
+
+	orderId := request.FormValue("order_id")
+	amountStr := request.FormValue("amount")
+
+	amount, _ := strconv.ParseFloat(amountStr, 64)
+
+	// gRPC call at Payment service
+	_, err := s.clients.Payment.CreatePayment(request.Context(), &payment.CreatePaymentRequest{
+		OrderId: orderId,
+		Amount:  amount,
+	})
+	if err != nil {
+		log.Printf("Failed creation of payment for order %s: %v", orderId, err)
+		http.Error(writer, "Failed creation of payment", http.StatusPaymentRequired)
+		return
+	}
+
+	// Redirection to processing page of the payment
+	http.Redirect(writer, request, "/payment/process", http.StatusSeeOther)
+}
+
+func (s *WebServer) processPaymentHandler(writer http.ResponseWriter, request *http.Request) {
+	// Only POST requests are accepted
+	if request.Method != http.MethodPost {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// User must be logged
+	_, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
+		return
+	}
+
+	username := request.FormValue("username")
+	orderId := request.FormValue("order_id")
+	amountStr := request.FormValue("amount")
+
+	amount, _ := strconv.ParseFloat(amountStr, 64)
+
+	// gRPC call at Payment service
+	_, err := s.clients.Payment.ProcessPayment(request.Context(), &payment.ProcessPaymentRequest{
+		OrderId: orderId,
+		Amount:  amount,
+	})
+	if err != nil {
+		log.Printf("Failed payment for order %s: %v", orderId, err)
+		http.Error(writer, "Denied Transaction", http.StatusPaymentRequired)
+		return
+	}
+
+	// Update Order Status
+	s.clients.Order.UpdateOrderStatus(request.Context(), &pbOrder.UpdateOrderStatusRequest{
+		OrderId: orderId,
+		Status:  pbOrder.OrderStatus_PROCESSING,
+	})
+
+	// Clearing cart after creating the order
 	_, err = s.clients.Cart.ClearCart(request.Context(), &pbCart.ClearCartRequest{Username: username})
 
-	// Redirect to payment page
-	log.Printf("Order successfully created for: %s", username)
-	http.Redirect(writer, request, "/payment", http.StatusSeeOther)
+	// Redirection to account page to see the order list
+	http.Redirect(writer, request, "/account", http.StatusSeeOther)
+}*/
+
+func (s *WebServer) paymentHandler(writer http.ResponseWriter, request *http.Request) {
+	if request.Method != http.MethodPost {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	session, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
+		return
+	}
+	username := session.Values["username"].(string)
+
+	// 1. Recupera i dati di spedizione dal form
+	fullname := request.FormValue("fullname")
+	address := request.FormValue("address")
+	paymentMethod := request.FormValue("payment_method")
+	_ = fullname
+	_ = address
+	_ = paymentMethod // Usali se il tuo proto li prevede
+
+	// 2. Recupera il carrello attuale per sapere cosa ordinare
+	cartRes, err := s.clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{Username: username})
+	checkerr(writer, err)
+
+	var orderItems []*pbOrder.OrderItem
+	var totalPrice float64
+	for _, cartItem := range cartRes.GetCart().GetItems() {
+		orderItems = append(orderItems, &pbOrder.OrderItem{
+			ItemId:   cartItem.GetItemId(),
+			Quantity: cartItem.GetQuantity(),
+			Price:    cartItem.GetPrice(),
+		})
+		totalPrice += float64(cartItem.GetQuantity()) * float64(cartItem.GetPrice())
+	}
+
+	// 3. 🔥 CREA L'ORDINE ORA!
+	orderRes, err := s.clients.Order.CreateOrder(request.Context(), &pbOrder.CreateOrderRequest{
+		UserId:     username,
+		OrderItems: orderItems,
+	})
+	if err != nil {
+		log.Printf("Error during order creation: %v", err)
+		http.Error(writer, "Error creating order", http.StatusInternalServerError)
+		return
+	}
+
+	// 4. Prendi l'ID corretto (usando la modifica fatta nel .proto, es. .GetOrderId())
+	orderId := orderRes.GetOrderId()
+
+	// 5. Mostra la pagina di pagamento sicuro (payment.html) passando l'ID e il totale
+	templateData := map[string]interface{}{
+		"OrderID": orderId,
+		"Amount":  totalPrice,
+	}
+
+	checkerr(writer, s.templates.ExecuteTemplate(writer, "payment.html", templateData))
 }
 
 // AUTHETIFICATION PAGE HANDLERS ///////////////////////////////////////////////////////////////
@@ -456,6 +635,7 @@ func main() {
 	mux.HandleFunc("/cart/add", server.addToCartHandler)
 	mux.HandleFunc("/cart/remove", server.removeFromCartHandler)
 	mux.HandleFunc("/order", server.orderHandler)
+	mux.HandleFunc("/payment", server.paymentHandler)
 	mux.HandleFunc("/account", server.accountHandler)
 	mux.HandleFunc("/register", server.registerHandler)
 	mux.HandleFunc("/login", server.loginHandler)

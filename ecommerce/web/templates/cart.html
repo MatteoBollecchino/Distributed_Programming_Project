@@ -153,10 +153,8 @@
 
                 <div class="cart-summary">
                     <h3>Total: <span class="total-price">€{{ .TotalPrice }}</span></h3>
-                    
-                    <form action="/order" method="POST" style="margin: 0;">
-                        <button type="submit" class="btn-checkout">Checkout</button>
-                    </form>
+                        
+                    <a href="/order" class="btn-checkout">Checkout</a>
                 </div>
             {{ else }}
                 <div class="empty-cart">

@@ -59,11 +59,11 @@ func (s *OrderServer) CreateOrder(ctx context.Context, req *pb.CreateOrderReques
 		}
 	}
 
-	err := s.repo.CreateOrder(req.UserId, req.OrderItems)
+	orderId, err := s.repo.CreateOrder(req.UserId, req.OrderItems)
 	if err != nil {
 		return &pb.CreateOrderResponse{ErrorMessage: err.Error()}, err
 	}
-	return &pb.CreateOrderResponse{}, nil
+	return &pb.CreateOrderResponse{OrderId: orderId}, nil
 }
 
 // UpdateOrderStatus updates the status of an order by its unique identifier.

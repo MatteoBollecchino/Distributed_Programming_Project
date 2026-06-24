@@ -85,7 +85,7 @@ func TestCreateNewOrderToNewUser(t *testing.T) {
 	db, repo := setupTest(t)
 
 	// Test creating a valid order
-	err := repo.CreateOrder("user789", []*pb.OrderItem{
+	_, err := repo.CreateOrder("user789", []*pb.OrderItem{
 		{ItemId: "item111", Quantity: 3, Price: 29.99},
 		{ItemId: "item222", Quantity: 1, Price: 59.99},
 	})
@@ -110,7 +110,7 @@ func TestCreateNewOrderToExistingUser(t *testing.T) {
 	db, repo := setupTest(t)
 
 	// Test creating a valid order for an existing user
-	err := repo.CreateOrder("user123", []*pb.OrderItem{
+	_, err := repo.CreateOrder("user123", []*pb.OrderItem{
 		{ItemId: "item333", Quantity: 2, Price: 39.99},
 	})
 	if err != nil {
@@ -134,7 +134,7 @@ func TestCreateOrderWithInvalidUserID(t *testing.T) {
 	db, repo := setupTest(t)
 
 	// Test creating an order with empty userID
-	err := repo.CreateOrder("", []*pb.OrderItem{
+	_, err := repo.CreateOrder("", []*pb.OrderItem{
 		{ItemId: "item444", Quantity: 1, Price: 19.99},
 	})
 	if err == nil {
@@ -155,7 +155,7 @@ func TestCreateOrderWithEmptyItems(t *testing.T) {
 	db, repo := setupTest(t)
 
 	// Test creating an order with empty items
-	err := repo.CreateOrder("user999", []*pb.OrderItem{})
+	_, err := repo.CreateOrder("user999", []*pb.OrderItem{})
 	if err == nil {
 		t.Fatalf("Expected error for empty items, got nil")
 	}
@@ -174,7 +174,7 @@ func TestCreateOrderWithInvalidItemID(t *testing.T) {
 	db, repo := setupTest(t)
 
 	// Test creating an order with an invalid itemID
-	err := repo.CreateOrder("user888", []*pb.OrderItem{
+	_, err := repo.CreateOrder("user888", []*pb.OrderItem{
 		{ItemId: "", Quantity: 2, Price: 29.99},
 	})
 	if err == nil {
@@ -195,7 +195,7 @@ func TestCreateOrderWithInvalidQuantity(t *testing.T) {
 	db, repo := setupTest(t)
 
 	// Test creating an order with an invalid quantity
-	err := repo.CreateOrder("user777", []*pb.OrderItem{
+	_, err := repo.CreateOrder("user777", []*pb.OrderItem{
 		{ItemId: "item555", Quantity: 0, Price: 39.99},
 	})
 	if err == nil {
@@ -216,7 +216,7 @@ func TestCreateOrderWithInvalidPrice(t *testing.T) {
 	db, repo := setupTest(t)
 
 	// Test creating an order with an invalid price
-	err := repo.CreateOrder("user666", []*pb.OrderItem{
+	_, err := repo.CreateOrder("user666", []*pb.OrderItem{
 		{ItemId: "item666", Quantity: 2, Price: -10.00},
 	})
 	if err == nil {
@@ -418,7 +418,7 @@ func TestListOrdersByUserValidID(t *testing.T) {
 	_, repo := setupTest(t)
 
 	// Adding an additional order for user123 to test multiple orders
-	err := repo.CreateOrder("user123", []*pb.OrderItem{
+	_, err := repo.CreateOrder("user123", []*pb.OrderItem{
 		{ItemId: "item999", Quantity: 4, Price: 14.99},
 	})
 	if err != nil {

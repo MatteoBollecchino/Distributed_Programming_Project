@@ -19,36 +19,36 @@ func NewOrderServiceRepository(db *gorm.DB) *OrderServiceRepository {
 }
 
 // CreateOrder creates a new order in the database.
-func (r *OrderServiceRepository) CreateOrder(userID string, items []*pb.OrderItem) error {
+func (r *OrderServiceRepository) CreateOrder(userID string, items []*pb.OrderItem) (string, error) {
 
 	// Validate UserID
 	if err := checkValidID(userID); err != nil {
-		return err
+		return "", err
 	}
 
 	// Validate List of Order Items
 	if items == nil {
-		return errors.New("items list cannot be nil")
+		return "", errors.New("items list cannot be nil")
 	}
 	if len(items) == 0 {
-		return errors.New("order must contain at least one item")
+		return "", errors.New("order must contain at least one item")
 	}
 	for _, item := range items {
 		if err := checkValidID(item.ItemId); err != nil {
-			return err
+			return "", err
 		}
 		if item.Quantity == 0 {
-			return errors.New("item quantity must be greater than zero")
+			return "", errors.New("item quantity must be greater than zero")
 		}
 		if item.Price < 0 {
-			return errors.New("item price cannot be negative")
+			return "", errors.New("item price cannot be negative")
 		}
 	}
 
 	// Check Order Uniqueness
 	orderID := ulid.Make().String()
 	if err := checkOrderUniqueness(r.db, orderID); err != nil {
-		return err
+		return "", err
 	}
 
 	// Create Order
@@ -69,9 +69,9 @@ func (r *OrderServiceRepository) CreateOrder(userID string, items []*pb.OrderIte
 
 	// Save Order to Database
 	if err := r.db.Create(order).Error; err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return orderID, nil
 }
 
 // UpdateOrderStatus updates the status of an existing order.
