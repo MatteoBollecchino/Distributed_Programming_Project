@@ -160,27 +160,6 @@
                     <input type="hidden" name="order_id" value="{{ .OrderID }}">
                     <input type="hidden" name="amount" value="{{ .Amount }}">
 
-                    <div class="form-group">
-                        <label for="cardholder">Cardholder Name</label>
-                        <input type="text" id="cardholder" required placeholder="John Doe">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="cardnumber">Card Number</label>
-                        <input type="text" id="cardnumber" required placeholder="1234 5678 1234 5678" maxlength="19">
-                    </div>
-
-                    <div style="display: flex; gap: 15px;">
-                        <div class="form-group" style="flex: 2;">
-                            <label for="expiry">Expiration Date</label>
-                            <input type="text" id="expiry" required placeholder="MM/YY" maxlength="5">
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label for="cvv">CVV</label>
-                            <input type="password" id="cvv" required placeholder="123" maxlength="3">
-                        </div>
-                    </div>
-
                     <button type="submit" class="btn-pay">Confirm & Pay €{{ .Amount }}</button>
                 </form>
             </div>

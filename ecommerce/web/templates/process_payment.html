@@ -1,0 +1,102 @@
+{{template "header" .}}
+
+<style>
+    /* ===== Success Container ===== */
+    .success-container {
+        max-width: 600px;
+        margin: 60px auto;
+        padding: 20px;
+    }
+
+    .success-card {
+        background-color: rgba(0, 0, 0, 0.75);
+        padding: 50px 40px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        text-align: center;
+        border: 1px solid rgba(245, 197, 66, 0.2);
+    }
+
+    /* ===== Icon Status ===== */
+    .success-icon {
+        font-size: 4rem;
+        color: #f5c542;
+        margin-bottom: 20px;
+    }
+
+    .success-card h2 {
+        font-family: 'Cinzel', serif;
+        font-size: 2.2rem;
+        color: #f5c542;
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .success-card p {
+        font-size: 1.1rem;
+        color: #ccc;
+        line-height: 1.6;
+        margin-bottom: 30px;
+    }
+
+    /* ===== Buttons ===== */
+    .btn-account {
+        display: inline-block;
+        padding: 14px 35px;
+        border: none;
+        border-radius: 25px;
+        background-color: #f5c542;
+        color: #000;
+        font-weight: bold;
+        font-size: 1.1rem;
+        text-decoration: none;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(245, 197, 66, 0.3);
+    }
+
+    .btn-account:hover {
+        background-color: #ffd966;
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(245, 197, 66, 0.5);
+    }
+
+    .secondary-link {
+        display: block;
+        margin-top: 20px;
+        color: #aaa;
+        text-decoration: none;
+        font-size: 0.95rem;
+        transition: color 0.2s;
+    }
+
+    .secondary-link:hover {
+        color: #f5c542;
+    }
+</style>
+
+<body>
+    <div style="
+        background: rgba(20, 20, 40, 0.5);
+        padding: 10px;
+        border-radius: 18px;
+        color: #fff;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+        max-width: 1200px;
+        margin: 40px auto;
+    ">
+        <div class="success-container">
+            <div class="success-card">
+                <div class="success-icon">✓</div>
+                
+                <h2>Payment Confirmed!</h2>
+                
+                <p>Thank you for your purchase. Your payment has been processed successfully and your order is now being prepared.</p>
+
+                <a href="/account" class="btn-account">Go to My Orders</a>
+            </div>
+        </div>
+    </div>
+</body>
+
+{{template "footer" .}}
+</html>
