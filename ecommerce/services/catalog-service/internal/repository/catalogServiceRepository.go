@@ -239,8 +239,8 @@ func checkDescriptionValidity(description string) error {
 }
 
 func checkQuantityAvailableValidity(quantity uint32) error {
-	if quantity == 0 {
-		return errors.New("Quantity available must be greater than zero")
+	if quantity < 0 {
+		return errors.New("Quantity available must be greater or equal than zero")
 	}
 	return nil
 }

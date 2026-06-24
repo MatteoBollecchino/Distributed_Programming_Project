@@ -89,9 +89,9 @@ func (s *CatalogServer) UpdateQuantityAvailable(ctx context.Context, req *pb.Upd
 		}, status.Error(codes.InvalidArgument, "ItemId must be provided and not empty")
 	}
 
-	if req.Quantity == 0 {
+	if req.Quantity < 0 {
 		return &pb.UpdateQuantityAvailableResponse{
-			ErrorMessage: "Quantity must be greater than zero",
+			ErrorMessage: "Quantity must be greater or equal than zero",
 		}, status.Error(codes.InvalidArgument, "Quantity must be greater than zero")
 	}
 

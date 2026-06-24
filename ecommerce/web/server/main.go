@@ -3,6 +3,7 @@ package main
 import (
 	"html/template"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -134,7 +135,7 @@ func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Reques
 	// Mapping data for HTML file
 	templateData := map[string]interface{}{
 		"Items":      cartRes.GetCart().GetItems(),
-		"TotalPrice": totalPrice,
+		"TotalPrice": math.Trunc(totalPrice*100) / 100,
 	}
 
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", templateData))
@@ -266,7 +267,7 @@ func (s *WebServer) orderHandler(writer http.ResponseWriter, request *http.Reque
 	// Mapping data for HTML file
 	templateData := map[string]interface{}{
 		"Items":      cartRes.GetCart().GetItems(),
-		"TotalPrice": totalPrice,
+		"TotalPrice": math.Trunc(totalPrice*100) / 100,
 	}
 
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "order.html", templateData))
@@ -330,14 +331,14 @@ func (s *WebServer) paymentHandler(writer http.ResponseWriter, request *http.Req
 	// Creation of the Payment
 	_, err = s.clients.Payment.CreatePayment(request.Context(), &pbPayment.CreatePaymentRequest{
 		OrderId: orderIdStr,
-		Amount:  priceRes.GetTotalPrice(),
+		Amount:  math.Trunc(priceRes.GetTotalPrice()*100) / 100,
 	})
 	log.Printf("Payment successfully created for: %s", username)
 
 	// Mapping data for HTML file
 	templateData := map[string]interface{}{
 		"OrderID": orderIdStr,
-		"Amount":  priceRes.GetTotalPrice(),
+		"Amount":  math.Trunc(priceRes.GetTotalPrice()*100) / 100,
 	}
 
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "payment.html", templateData))
@@ -367,7 +368,7 @@ func (s *WebServer) processPaymentHandler(writer http.ResponseWriter, request *h
 	// Payment status is updated
 	_, err = s.clients.Payment.ProcessPayment(request.Context(), &pbPayment.ProcessPaymentRequest{
 		OrderId: orderId,
-		Amount:  amount,
+		Amount:  math.Trunc(amount*100) / 100,
 	})
 	if err != nil {
 		log.Printf("Failed payment for order %s: %v", orderId, err)
@@ -383,11 +384,60 @@ func (s *WebServer) processPaymentHandler(writer http.ResponseWriter, request *h
 	})
 	log.Printf("Processing order for: %s", username)
 
-	// Clearing cart after creating the order
-	_, err = s.clients.Cart.ClearCart(request.Context(), &pbCart.ClearCartRequest{Username: username})
-	log.Printf("Cleared cart for: %s", username)
+	// Update catalog updating  the available quantity of acquired items
+	// 1. Recupera il carrello in modo sicuro
+	cartRes, err := s.clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{Username: username})
+	if err != nil {
+		log.Printf("Failed to get cart for catalog update: %v", err)
+		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		return // FONDAMENTALE: blocca la funzione se c'è un errore
+	}
 
-	// Renderizziamo la pagina di intermezzo
+	// 2. Ciclo sui prodotti del carrello
+	for _, item := range cartRes.GetCart().GetItems() {
+		// Recupera l'articolo dal catalogo per sapere la quantità attuale
+		catalogItemRes, err := s.clients.Catalog.GetCatalogItem(request.Context(), &pbCatalog.GetCatalogItemRequest{
+			ItemId: item.GetItemId(),
+		})
+		if err != nil {
+			log.Printf("Failed to get catalog item %s: %v", item.GetItemId(), err)
+			http.Error(writer, "Internal server error", http.StatusInternalServerError)
+			return // Evita il panic sulla riga successiva
+		}
+
+		// Calcola la nuova quantità disponibile
+		currentStock := catalogItemRes.GetItem().GetQuantityAvailable()
+		purchasedQty := item.GetQuantity()
+
+		// Controllo di sicurezza per evitare che la quantità diventi negativa
+		var newStock uint32
+		if currentStock >= purchasedQty {
+			newStock = currentStock - purchasedQty
+		} else {
+			newStock = 0 // O gestisci un errore di "prodotto esaurito" se necessario
+		}
+
+		// Aggiorna la quantità nel microservizio del catalogo
+		_, err = s.clients.Catalog.UpdateQuantityAvailable(request.Context(), &pbCatalog.UpdateQuantityAvailableRequest{
+			ItemId:   item.GetItemId(),
+			Quantity: newStock,
+		})
+		if err != nil {
+			log.Printf("Failed to update stock for item %s: %v", item.GetItemId(), err)
+			http.Error(writer, "Failed to update catalog stock", http.StatusInternalServerError)
+			return
+		}
+	}
+	log.Printf("Catalog has been updated successfully after the purchase")
+
+	// 3. Svuota il carrello dopo che tutto il resto è andato a buon fine
+	_, err = s.clients.Cart.ClearCart(request.Context(), &pbCart.ClearCartRequest{Username: username})
+	if err != nil {
+		log.Printf("Warning: Failed to clear cart for %s: %v", username, err)
+	} else {
+		log.Printf("Cleared cart for: %s", username)
+	}
+
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "process_payment.html", nil))
 }
 
@@ -415,10 +465,20 @@ func (s *WebServer) accountHandler(writer http.ResponseWriter, request *http.Req
 	username, _ := session.Values["username"].(string)
 	role, _ := session.Values["role"].(string)
 
+	ordersRes, err := s.clients.Order.ListOrdersByUser(request.Context(), &pbOrder.ListOrdersByUserRequest{
+		UserId: username,
+	})
+	if err != nil {
+		log.Printf("Error retrieving orders for %s: %v", username, err)
+		// In case of error -> empty list
+		ordersRes = &pbOrder.ListOrdersByUserResponse{}
+	}
+
 	// Preparing user data for HTML template
 	templateData := map[string]interface{}{
 		"Username": username,
 		"Role":     role,
+		"Orders":   ordersRes.GetOrders(),
 	}
 
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "account.html", templateData))
@@ -504,6 +564,8 @@ func (s *WebServer) loginHandler(writer http.ResponseWriter, request *http.Reque
 			return
 		}
 
+		log.Printf("User %v successfully logged in", session.Values["username"])
+
 		// Redirection to catalog page
 		http.Redirect(writer, request, "/cart", http.StatusSeeOther)
 	}
@@ -523,7 +585,7 @@ func (s *WebServer) logoutHandler(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	log.Println("User successfully logged out.")
+	log.Println("User %v successfully logged out", session.Values["username"])
 
 	// Redirecting user to welcome page
 	http.Redirect(writer, request, "/welcome", http.StatusSeeOther)

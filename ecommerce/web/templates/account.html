@@ -1,23 +1,33 @@
 {{template "header" .}}
 
 <style>
-
-    /* ===== Profile Card ===== */
-    .profile-container {
-        max-width: 600px;
+    /* ===== Profile & Orders Layout ===== */
+    .account-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 40px;
+        max-width: 900px;
         margin: 0 auto;
         padding: 20px;
     }
 
-    .profile-card {
+    .profile-card, .orders-card {
         background-color: rgba(0,0,0,0.75);
         border-radius: 16px;
         padding: 40px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-        text-align: center;
+        border: 1px solid rgba(245, 197, 66, 0.1);
     }
 
-    .profile-card h3 {
+    .profile-card {
+        text-align: center;
+        max-width: 500px;
+        margin: 0 auto;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    h3 {
         color: #f5c542;
         font-family: 'Cinzel', serif;
         font-size: 1.8rem;
@@ -51,18 +61,82 @@
         font-weight: 500;
     }
 
+    /* ===== Orders Table ===== */
+    .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        text-align: left;
+    }
+
+    .orders-table th {
+        font-family: 'Cinzel', serif;
+        color: #f5c542;
+        border-bottom: 2px solid rgba(245, 197, 66, 0.3);
+        padding: 12px;
+        font-size: 1rem;
+    }
+
+    .orders-table td {
+        padding: 15px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+    }
+
+    .order-id {
+        font-family: monospace;
+        color: #ccc;
+        font-size: 0.95rem;
+    }
+
+    .no-orders {
+        text-align: center;
+        color: #aaa;
+        font-style: italic;
+        padding: 20px 0;
+    }
+
+    /* ===== Status Badges ===== */
+    .status-badge {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    /* Stili dinamici in base allo stato dell'ordine gRPC */
+    .status-badge.status-placed, .status-badge.status-0 {
+        background-color: rgba(245, 197, 66, 0.2);
+        color: #f5c542;
+        border: 1px solid #f5c542;
+    }
+
+    .status-badge.status-processing, .status-badge.status-1 {
+        background-color: rgba(0, 123, 255, 0.2);
+        color: #007bff;
+        border: 1px solid #007bff;
+    }
+
+    .status-badge.status-shipped, .status-badge.status-2 {
+        background-color: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+        border: 1px solid #28a745;
+    }
+
     /* ===== Logout Button ===== */
     .btn-logout {
         display: inline-block;
-        padding: 14px 40px;
+        padding: 12px 35px;
         background-color: transparent;
-        color: #dc3545; /* Rosso per indicare un'azione distruttiva/di uscita */
+        color: #dc3545;
         border: 2px solid #dc3545;
         text-decoration: none;
         font-weight: bold;
         border-radius: 25px;
         transition: all 0.3s;
-        font-size: 1.1rem;
+        font-size: 1rem;
     }
 
     .btn-logout:hover {
@@ -75,22 +149,23 @@
 <body>
 
     <div style="
-            background: rgba(20, 20, 40, 0.8);
+            background: rgba(20, 20, 40, 0.5);
             padding: 45px;
             border-radius: 18px;
             color: #fff;
             box-shadow: 0 15px 40px rgba(0,0,0,0.7);
-            max-width: 800px;
+            max-width: 1000px;
             margin: 40px auto;
         ">
 
-        <section class="page-title">
-            <h2>Account</h2>
-            <p>Manage your account settings and preferences</p>
+        <section class="page-title" style="text-align: center; margin-bottom: 30px;">
+            <h2>Account Dashboard</h2>
+            <p>Manage your profile and track your orders</p>
         </section>
 
-        <section class="profile-container">
-            <div class="profile-card">
+        <div class="account-layout">
+            
+            <section class="profile-card">
                 <h3>My Profile</h3>
                 
                 <div class="info-row">
@@ -106,9 +181,40 @@
                 {{ end }}
 
                 <a href="/logout" class="btn-logout">Log Out</a>
-            </div>
-        </section>
+            </section>
 
-    </div> </body>
+            <section class="orders-card">
+                <h3>Order History</h3>
+                
+                {{ if .Orders }}
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ range .Orders }}
+                            <tr>
+                                <td class="order-id">{{ .GetOrderId }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ .Status }}">
+                                        {{ .GetStatus }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {{ end }}
+                        </tbody>
+                    </table>
+                {{ else }}
+                    <p class="no-orders">You haven't placed any orders yet.</p>
+                {{ end }}
+            </section>
+
+        </div>
+    </div> 
+</body>
 
 {{template "footer" .}}
+</html>

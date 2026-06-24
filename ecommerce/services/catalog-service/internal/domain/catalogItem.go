@@ -15,7 +15,7 @@ type CatalogItem struct {
 	Description string `gorm:"not null; check:description <> ''"`
 
 	// QuantityAvailable indicates how many units of the item are available in stock.
-	QuantityAvailable uint32 `gorm:"not null; check:quantity_available > 0"`
+	QuantityAvailable uint32 `gorm:"not null; check:quantity_available >= 0"`
 
 	// Price indicates the price of the catalog item.
 	Price float64 `gorm:"not null; check:price >= 0"`
