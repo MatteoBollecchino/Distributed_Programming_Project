@@ -42,6 +42,16 @@
         margin: 15px 0;
     }
 
+    /* ===== Out of Stock Text ===== */
+    .out-of-stock {
+        color: #dc3545;
+        font-weight: bold;
+        margin: 10px 0 15px 0;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
     .product-card button {
         padding: 12px 25px;
         border: none;
@@ -81,7 +91,8 @@
         ">
             <h2>{{ .Title }}</h2>
             <p>Discover legendary items from fantasy and science fiction worlds</p>
-        </div> </section>
+        </div> 
+    </section>
 
     <section class="catalog">
         {{ range .Products }}
@@ -90,35 +101,43 @@
                 <div class="price">€{{ .GetPrice }}</div>
                 <p>{{ .GetDescription }}</p>
                 
-                {{ if $.IsLoggedIn }}
-                    <form action="/cart/add" method="POST" style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
-                        <input type="hidden" name="product_id" value="{{ .GetItemId }}">
-                        <input type="hidden" name="price" value="{{ .GetPrice }}">
+                {{ if gt .GetQuantityAvailable 0 }}
+                    
+                    {{ if $.IsLoggedIn }}
+                        <form action="/cart/add" method="POST" style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+                            <input type="hidden" name="product_id" value="{{ .GetItemId }}">
+                            <input type="hidden" name="price" value="{{ .GetPrice }}">
+                            
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <label for="quantity-{{ .GetItemId }}" style="font-size: 0.9rem; opacity: 0.8;">Qty:</label>
+                                <input type="number" 
+                                    id="quantity-{{ .GetItemId }}" 
+                                    name="quantity" 
+                                    value="1" 
+                                    min="1" 
+                                    max="{{ .GetQuantityAvailable }}" 
+                                    style="
+                                        width: 60px; 
+                                        padding: 5px; 
+                                        border-radius: 8px; 
+                                        border: 1px solid #f5c542; 
+                                        background: #000; 
+                                        color: #fff; 
+                                        text-align: center;
+                                    ">
+                            </div>
                         
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                            <label for="quantity-{{ .GetItemId }}" style="font-size: 0.9rem; opacity: 0.8;">Qty:</label>
-                            <input type="number" 
-                                id="quantity-{{ .GetItemId }}" 
-                                name="quantity" 
-                                value="1" 
-                                min="1" 
-                                max="{{ .GetQuantityAvailable }}" 
-                                style="
-                                    width: 60px; 
-                                    padding: 5px; 
-                                    border-radius: 8px; 
-                                    border: 1px solid #f5c542; 
-                                    background: #000; 
-                                    color: #fff; 
-                                    text-align: center;
-                                ">
-                        </div>
-                        
-                        <button type="submit">Add to Cart</button>
-                    </form>
+                            <button type="submit">Add to Cart</button>
+                        </form>
+                    {{ else }}
+                        <button type="button" disabled>Log in to buy</button>
+                    {{ end }}
+                
                 {{ else }}
-                    <button type="button" disabled>Log in to buy</button>
+                    <div class="out-of-stock">Out of Stock</div>
+                    <button type="button" disabled>Sold Out</button>
                 {{ end }}
+
             </div>
         {{ else }}
             <p>No product available.</p>

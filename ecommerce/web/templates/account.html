@@ -144,6 +144,26 @@
         color: #fff;
         transform: scale(1.05);
     }
+
+    /* ===== Change Password Button ===== */
+    .btn-password {
+        display: inline-block;
+        padding: 12px 35px;
+        background-color: transparent;
+        color: #f5c542;;
+        border: 2px solid #f5c542;;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 25px;
+        transition: all 0.3s;
+        font-size: 1rem;
+    }
+
+    .btn-password:hover {
+        background-color: #4260f5;;
+        color: #fff;
+        transform: scale(1.05);
+    }
 </style>
 
 <body>
@@ -180,6 +200,7 @@
                 </div>
                 {{ end }}
 
+                <a href="/change/password" class="btn-password">Change Password</a>
                 <a href="/logout" class="btn-logout">Log Out</a>
             </section>
 

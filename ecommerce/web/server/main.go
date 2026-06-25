@@ -121,7 +121,6 @@ func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Reques
 
 	if err != nil {
 		log.Printf("Impossible to retrieve shopping cart for %s: %v", username, err)
-		//http.Error(writer, "Error in retrieving user cart", http.StatusInternalServerError)
 		checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", nil))
 		return
 	}
@@ -585,10 +584,57 @@ func (s *WebServer) logoutHandler(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	log.Println("User %v successfully logged out", session.Values["username"])
+	log.Printf("User %v successfully logged out", session.Values["username"])
 
 	// Redirecting user to welcome page
 	http.Redirect(writer, request, "/welcome", http.StatusSeeOther)
+}
+
+func (s *WebServer) changePasswordHandler(writer http.ResponseWriter, request *http.Request) {
+	// User must be logged
+	session, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
+		return
+	}
+
+	// User GET request -> register page
+	if request.Method == http.MethodGet {
+		checkerr(writer, s.templates.ExecuteTemplate(writer, "change_password.html", nil))
+		return
+	}
+
+	// User POST request -> user sends credentials
+	if request.Method == http.MethodPost {
+		username := session.Values["username"]
+		currentPassword := request.FormValue("current_password")
+		newPassword := request.FormValue("new_password")
+		confirmNewPassword := request.FormValue("confirm_new_password")
+
+		// Password validation
+		if newPassword != confirmNewPassword {
+			log.Printf("Failed registration for %s: passwords don't match", username)
+			checkerr(writer, s.templates.ExecuteTemplate(writer, "change_password.html", "Passwords do not match"))
+			return
+		}
+
+		// gRPC call at Auth service
+		_, err := s.clients.Auth.ChangePassword(request.Context(), &pbAuth.ChangePasswordRequest{
+			Username:    username.(string),
+			OldPassword: currentPassword,
+			NewPassword: newPassword,
+		})
+
+		if err != nil {
+			log.Printf("Failed Changing Passowrds: %v", err)
+			checkerr(writer, s.templates.ExecuteTemplate(writer, "change_password.html", "Invalid Password"))
+			return
+		}
+
+		log.Printf("User %v successfully changed password", session.Values["username"])
+
+		// Redirection to account page
+		http.Redirect(writer, request, "/account", http.StatusSeeOther)
+	}
 }
 
 // MAIN ///////////////////////////////////////////////////////////////
@@ -626,6 +672,7 @@ func main() {
 	mux.HandleFunc("/register", server.registerHandler)
 	mux.HandleFunc("/login", server.loginHandler)
 	mux.HandleFunc("/logout", server.logoutHandler)
+	mux.HandleFunc("/change/password", server.changePasswordHandler)
 
 	log.Printf("The Web Server listening on %s", port)
 	log.Fatal(http.ListenAndServe(port, mux))
