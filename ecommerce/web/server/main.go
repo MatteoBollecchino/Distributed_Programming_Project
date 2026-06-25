@@ -29,10 +29,14 @@ type WebServer struct {
 	store     *sessions.CookieStore
 }
 
-func checkerr(writer http.ResponseWriter, err error) {
+func checkerr(writer http.ResponseWriter, err error) bool {
+	ok := true
 	if err != nil {
+		ok = false
+		log.Printf("Error occured: %v", err.Error())
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 	}
+	return ok
 }
 
 func loadTemplates() *template.Template {
@@ -48,7 +52,9 @@ func loadTemplates() *template.Template {
 
 func checkIfUserIsLogged(s *WebServer, request *http.Request, writer http.ResponseWriter) (*sessions.Session, bool) {
 	session, err := s.store.Get(request, sessionName)
-	checkerr(writer, err)
+	if !checkerr(writer, err) {
+		return nil, false
+	}
 	if loggedIn, ok := session.Values["logged_in"].(bool); !ok || !loggedIn {
 		http.Error(writer, "Unauthorized", http.StatusUnauthorized)
 		return nil, false
@@ -59,7 +65,9 @@ func checkIfUserIsLogged(s *WebServer, request *http.Request, writer http.Respon
 // WELCOME PAGE HANDLER ///////////////////////////////////////////////////////////////
 
 func (s *WebServer) welcomeHandler(writer http.ResponseWriter, request *http.Request) {
-	checkerr(writer, s.templates.ExecuteTemplate(writer, "welcome_page.html", nil))
+	if !checkerr(writer, s.templates.ExecuteTemplate(writer, "welcome_page.html", nil)) {
+		return
+	}
 }
 
 // CATALOG PAGE HANDLER ///////////////////////////////////////////////////////////////
@@ -67,11 +75,15 @@ func (s *WebServer) welcomeHandler(writer http.ResponseWriter, request *http.Req
 func (s *WebServer) productCatalogHandler(writer http.ResponseWriter, request *http.Request) {
 	// Request products from the catalog microservice via gRPC using s.clients
 	catalogRes, err := s.clients.Catalog.ListCatalogItems(request.Context(), &pbCatalog.ListCatalogItemsRequest{})
-	checkerr(writer, err)
+	if !checkerr(writer, err) {
+		return
+	}
 
 	// Get current session
 	session, err := s.store.Get(request, sessionName)
-	checkerr(writer, err)
+	if !checkerr(writer, err) {
+		return
+	}
 
 	isLoggedIn := false
 	username := ""
@@ -90,7 +102,9 @@ func (s *WebServer) productCatalogHandler(writer http.ResponseWriter, request *h
 		"Username":   username,
 	}
 
-	checkerr(writer, s.templates.ExecuteTemplate(writer, "catalog.html", templateData))
+	if !checkerr(writer, s.templates.ExecuteTemplate(writer, "catalog.html", templateData)) {
+		return
+	}
 }
 
 // CART PAGE HANDLERS ///////////////////////////////////////////////////////////////
@@ -104,7 +118,9 @@ func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Reques
 
 	// Retrieve session
 	session, err := s.store.Get(request, sessionName)
-	checkerr(writer, err)
+	if !checkerr(writer, err) {
+		return
+	}
 
 	// Checking if user is logged
 	if loggedIn, ok := session.Values["logged_in"].(bool); !ok || !loggedIn {
@@ -118,7 +134,6 @@ func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Reques
 	cartRes, err := s.clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{
 		Username: username,
 	})
-
 	if err != nil {
 		log.Printf("Impossible to retrieve shopping cart for %s: %v", username, err)
 		checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", nil))
@@ -126,18 +141,27 @@ func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Reques
 	}
 
 	// Calculating total price
-	var totalPrice float64
-	for _, item := range cartRes.GetCart().GetItems() {
-		totalPrice += float64(item.GetQuantity()) * float64(item.GetPrice())
+	totalPriceRes, err := s.clients.Cart.CalculateTotalPrice(request.Context(), &pbCart.CalculateTotalPriceRequest{
+		Username: username,
+	})
+	if !checkerr(writer, err) {
+		return
 	}
+	/*if err != nil {
+		log.Printf("Error calculating cart's total price: %v", err)
+		http.Error(writer, "Error calculating cart's total price", http.StatusInternalServerError)
+		return
+	}*/
 
 	// Mapping data for HTML file
 	templateData := map[string]interface{}{
 		"Items":      cartRes.GetCart().GetItems(),
-		"TotalPrice": math.Trunc(totalPrice*100) / 100,
+		"TotalPrice": math.Trunc(totalPriceRes.GetTotalPrice()*100) / 100,
 	}
 
-	checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", templateData))
+	if !checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", templateData)) {
+		return
+	}
 }
 
 func (s *WebServer) addToCartHandler(writer http.ResponseWriter, request *http.Request) {
@@ -161,11 +185,14 @@ func (s *WebServer) addToCartHandler(writer http.ResponseWriter, request *http.R
 
 	// Price conversion
 	price, err := strconv.ParseFloat(priceStr, 64)
-	if err != nil {
+	if !checkerr(writer, err) {
+		return
+	}
+	/*if err != nil {
 		log.Printf("Error in price conversion '%s': %v", priceStr, err)
 		http.Error(writer, "Price not valid", http.StatusBadRequest)
 		return
-	}
+	}*/
 
 	// Quantity Conversion
 	quantity, err := strconv.Atoi(quantityStr)
@@ -251,25 +278,27 @@ func (s *WebServer) orderHandler(writer http.ResponseWriter, request *http.Reque
 	cartRes, err := s.clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{
 		Username: username,
 	})
-	if err != nil {
-		log.Printf("Impossible to retrieve shopping cart for %s: %v", username, err)
-		http.Error(writer, "Error in retrieving user cart", http.StatusInternalServerError)
+	if !checkerr(writer, err) {
 		return
 	}
 
-	// Calculate Totale price
-	var totalPrice float64
-	for _, item := range cartRes.GetCart().GetItems() {
-		totalPrice += float64(item.GetQuantity()) * float64(item.GetPrice())
+	// Calculate total price
+	totalPriceRes, err := s.clients.Cart.CalculateTotalPrice(request.Context(), &pbCart.CalculateTotalPriceRequest{
+		Username: username,
+	})
+	if !checkerr(writer, err) {
+		return
 	}
 
 	// Mapping data for HTML file
 	templateData := map[string]interface{}{
 		"Items":      cartRes.GetCart().GetItems(),
-		"TotalPrice": math.Trunc(totalPrice*100) / 100,
+		"TotalPrice": math.Trunc(totalPriceRes.GetTotalPrice()*100) / 100,
 	}
 
-	checkerr(writer, s.templates.ExecuteTemplate(writer, "order.html", templateData))
+	if !checkerr(writer, s.templates.ExecuteTemplate(writer, "order.html", templateData)) {
+		return
+	}
 }
 
 func (s *WebServer) userOrdersHandler(writer http.ResponseWriter, request *http.Request) {
@@ -289,10 +318,7 @@ func (s *WebServer) userOrdersHandler(writer http.ResponseWriter, request *http.
 		orderRes, err := s.clients.Order.ListOrdersByUser(request.Context(), &pbOrder.ListOrdersByUserRequest{
 			UserId: username,
 		})
-
-		if err != nil {
-			log.Printf("Impossible to retrieve the list of orders for %s: %v", username, err)
-			http.Error(writer, "Error in retrieving list of orders", http.StatusInternalServerError)
+		if !checkerr(writer, err) {
 			return
 		}
 
@@ -313,7 +339,9 @@ func (s *WebServer) userOrdersHandler(writer http.ResponseWriter, request *http.
 		// Retrieving the order info
 		newStatusStr := request.FormValue("new_status")
 		newStatusValue, err := strconv.Atoi(newStatusStr)
-		checkerr(writer, err)
+		if !checkerr(writer, err) {
+			return
+		}
 
 		orderId := request.FormValue("order_id")
 
@@ -322,6 +350,9 @@ func (s *WebServer) userOrdersHandler(writer http.ResponseWriter, request *http.
 			OrderId: orderId,
 			Status:  pbOrder.OrderStatus(newStatusValue),
 		})
+		if !checkerr(writer, err) {
+			return
+		}
 
 		log.Printf("Status order successfullt updated")
 
@@ -347,7 +378,9 @@ func (s *WebServer) paymentHandler(writer http.ResponseWriter, request *http.Req
 
 	// Retrieve cart to create the order
 	cartRes, err := s.clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{Username: username})
-	checkerr(writer, err)
+	if !checkerr(writer, err) {
+		return
+	}
 
 	// OrderItems are created depending on CartItems
 	var orderItems []*pbOrder.OrderItem
@@ -364,11 +397,10 @@ func (s *WebServer) paymentHandler(writer http.ResponseWriter, request *http.Req
 		UserId:     username,
 		OrderItems: orderItems,
 	})
-	if err != nil {
-		log.Printf("Error creating order: %v", err)
-		http.Error(writer, "Error creating order", http.StatusInternalServerError)
+	if !checkerr(writer, err) {
 		return
 	}
+
 	log.Printf("Order successfully created for: %s", username)
 
 	// Retrieve OrderId
@@ -378,9 +410,7 @@ func (s *WebServer) paymentHandler(writer http.ResponseWriter, request *http.Req
 	priceRes, err := s.clients.Order.GetOrderPrice(request.Context(), &pbOrder.GetOrderPriceRequest{
 		OrderId: orderIdStr,
 	})
-	if err != nil {
-		log.Printf("Error retrieving price for order %s: %v", orderIdStr, err)
-		http.Error(writer, "Error retrieving price", http.StatusInternalServerError)
+	if !checkerr(writer, err) {
 		return
 	}
 
@@ -418,7 +448,9 @@ func (s *WebServer) processPaymentHandler(writer http.ResponseWriter, request *h
 	amountStr := request.FormValue("amount")
 
 	amount, err := strconv.ParseFloat(amountStr, 64)
-	checkerr(writer, err)
+	if !checkerr(writer, err) {
+		return
+	}
 
 	// gRPC call at Payment service
 	// Payment status is updated
@@ -426,11 +458,10 @@ func (s *WebServer) processPaymentHandler(writer http.ResponseWriter, request *h
 		OrderId: orderId,
 		Amount:  math.Trunc(amount*100) / 100,
 	})
-	if err != nil {
-		log.Printf("Failed payment for order %s: %v", orderId, err)
-		http.Error(writer, "Denied Transaction", http.StatusPaymentRequired)
+	if !checkerr(writer, err) {
 		return
 	}
+
 	log.Printf("Successfull payment for: %s", username)
 
 	// Update Order Status
@@ -440,59 +471,51 @@ func (s *WebServer) processPaymentHandler(writer http.ResponseWriter, request *h
 	})
 	log.Printf("Processing order for: %s", username)
 
-	// Update catalog updating  the available quantity of acquired items
-	// 1. Recupera il carrello in modo sicuro
+	// Update catalog changing  the available quantity of acquired items
+	// Retrieve cart
 	cartRes, err := s.clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{Username: username})
-	if err != nil {
-		log.Printf("Failed to get cart for catalog update: %v", err)
-		http.Error(writer, "Internal server error", http.StatusInternalServerError)
-		return // FONDAMENTALE: blocca la funzione se c'è un errore
+	if !checkerr(writer, err) {
+		return
 	}
 
-	// 2. Ciclo sui prodotti del carrello
 	for _, item := range cartRes.GetCart().GetItems() {
-		// Recupera l'articolo dal catalogo per sapere la quantità attuale
+		// Retrieve catalog item that was in cart
 		catalogItemRes, err := s.clients.Catalog.GetCatalogItem(request.Context(), &pbCatalog.GetCatalogItemRequest{
 			ItemId: item.GetItemId(),
 		})
-		if err != nil {
-			log.Printf("Failed to get catalog item %s: %v", item.GetItemId(), err)
-			http.Error(writer, "Internal server error", http.StatusInternalServerError)
-			return // Evita il panic sulla riga successiva
+		if !checkerr(writer, err) {
+			return
 		}
 
-		// Calcola la nuova quantità disponibile
+		// Find new available quantity for that catalog item
 		currentStock := catalogItemRes.GetItem().GetQuantityAvailable()
 		purchasedQty := item.GetQuantity()
 
-		// Controllo di sicurezza per evitare che la quantità diventi negativa
 		var newStock uint32
 		if currentStock >= purchasedQty {
 			newStock = currentStock - purchasedQty
 		} else {
-			newStock = 0 // O gestisci un errore di "prodotto esaurito" se necessario
+			newStock = 0
 		}
 
-		// Aggiorna la quantità nel microservizio del catalogo
+		// Update available quantity for that item in the catalog
 		_, err = s.clients.Catalog.UpdateQuantityAvailable(request.Context(), &pbCatalog.UpdateQuantityAvailableRequest{
 			ItemId:   item.GetItemId(),
 			Quantity: newStock,
 		})
-		if err != nil {
-			log.Printf("Failed to update stock for item %s: %v", item.GetItemId(), err)
-			http.Error(writer, "Failed to update catalog stock", http.StatusInternalServerError)
+		if !checkerr(writer, err) {
 			return
 		}
 	}
 	log.Printf("Catalog has been updated successfully after the purchase")
 
-	// 3. Svuota il carrello dopo che tutto il resto è andato a buon fine
+	// Clear cart
 	_, err = s.clients.Cart.ClearCart(request.Context(), &pbCart.ClearCartRequest{Username: username})
-	if err != nil {
-		log.Printf("Warning: Failed to clear cart for %s: %v", username, err)
-	} else {
-		log.Printf("Cleared cart for: %s", username)
+	if !checkerr(writer, err) {
+		return
 	}
+
+	log.Printf("Cleared cart for: %s", username)
 
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "process_payment.html", nil))
 }
@@ -508,7 +531,9 @@ func (s *WebServer) accountHandler(writer http.ResponseWriter, request *http.Req
 
 	// Retrieve session
 	session, err := s.store.Get(request, sessionName)
-	checkerr(writer, err)
+	if !checkerr(writer, err) {
+		return
+	}
 
 	// Check if user is logged
 	if loggedIn, ok := session.Values["logged_in"].(bool); !ok || !loggedIn {
@@ -556,7 +581,7 @@ func (s *WebServer) registerHandler(writer http.ResponseWriter, request *http.Re
 
 		// Password validation
 		if password != confirmPassword {
-			log.Printf("Failed registration for %s: passwords don't match", username)
+			// log.Printf("Failed registration for %s: passwords don't match", username)
 			checkerr(writer, s.templates.ExecuteTemplate(writer, "register.html", "Passwords do not match"))
 			return
 		}
@@ -568,7 +593,7 @@ func (s *WebServer) registerHandler(writer http.ResponseWriter, request *http.Re
 		})
 
 		if err != nil {
-			log.Printf("Failed Registration: %v", err)
+			// log.Printf("Failed Registration: %v", err)
 			checkerr(writer, s.templates.ExecuteTemplate(writer, "register.html", "Username already exists or invalid data"))
 			return
 		}
@@ -600,14 +625,16 @@ func (s *WebServer) loginHandler(writer http.ResponseWriter, request *http.Reque
 
 		// In case of error -> redirection to login page
 		if err != nil {
-			log.Printf("Failed Login: %v", err)
+			// log.Printf("Failed Login: %v", err)
 			checkerr(writer, s.templates.ExecuteTemplate(writer, "login.html", "Username or password are not valid"))
 			return
 		}
 
 		// Session creation
 		session, err := s.store.Get(request, sessionName)
-		checkerr(writer, err)
+		if !checkerr(writer, err) {
+			return
+		}
 
 		// Save user data in the session
 		session.Values["username"] = authRes.GetUser().GetUsername()
@@ -615,8 +642,8 @@ func (s *WebServer) loginHandler(writer http.ResponseWriter, request *http.Reque
 		session.Values["logged_in"] = true
 
 		// Saving session
-		if err = session.Save(request, writer); err != nil {
-			http.Error(writer, "Saving Session Error", http.StatusInternalServerError)
+		err = session.Save(request, writer)
+		if !checkerr(writer, err) {
 			return
 		}
 
@@ -630,14 +657,16 @@ func (s *WebServer) loginHandler(writer http.ResponseWriter, request *http.Reque
 func (s *WebServer) logoutHandler(writer http.ResponseWriter, request *http.Request) {
 	// Retrieve current session
 	session, err := s.store.Get(request, sessionName)
-	checkerr(writer, err)
+	if !checkerr(writer, err) {
+		return
+	}
 
 	// Set MaxAge=-1 to tell the browser to delete the cookie
 	session.Options.MaxAge = -1
 
 	// Save update of the session
-	if err := session.Save(request, writer); err != nil {
-		http.Error(writer, "Errore during logout", http.StatusInternalServerError)
+	err = session.Save(request, writer)
+	if !checkerr(writer, err) {
 		return
 	}
 
@@ -680,7 +709,6 @@ func (s *WebServer) changePasswordHandler(writer http.ResponseWriter, request *h
 			OldPassword: currentPassword,
 			NewPassword: newPassword,
 		})
-
 		if err != nil {
 			log.Printf("Failed Changing Passowrds: %v", err)
 			checkerr(writer, s.templates.ExecuteTemplate(writer, "change_password.html", "Invalid Password"))
@@ -708,9 +736,7 @@ func (s *WebServer) listAllUsersHandler(writer http.ResponseWriter, request *htt
 	}
 
 	users, err := s.clients.Auth.GetAllUsers(request.Context(), &pbAuth.GetAllUsersRequest{})
-	if err != nil {
-		log.Printf("Failed in Retrieving Users: %v", err)
-		http.Error(writer, "Failed in Retrieving Users", http.StatusInternalServerError)
+	if !checkerr(writer, err) {
 		return
 	}
 
