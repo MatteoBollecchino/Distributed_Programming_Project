@@ -164,6 +164,26 @@
         color: #fff;
         transform: scale(1.05);
     }
+
+    .btn-list-users {
+        display: inline-block;
+        padding: 12px 35px;
+        background-color: transparent;
+        color: #f5c542;;
+        border: 2px solid #f5c542;;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 25px;
+        transition: all 0.3s;
+        font-size: 1rem;
+    }
+
+    .btn-list-users:hover {
+        background-color: #4260f5;;
+        color: #fff;
+        transform: scale(1.05);
+    }
+
 </style>
 
 <body>
@@ -194,10 +214,14 @@
                 </div>
                 
                 {{ if .Role }}
-                <div class="info-row">
-                    <span class="info-label">Role:</span>
-                    <span class="info-value" style="text-transform: capitalize;">{{ .Role }}</span>
-                </div>
+                    <div class="info-row">
+                        <span class="info-label">Role:</span>
+                        <span class="info-value" style="text-transform: capitalize;">{{ .Role }}</span>
+                    </div>
+                {{ end }}
+
+                {{ if eq .Role .Admin}}
+                    <a href="/list/users" class="btn-list-users">List All Users</a>
                 {{ end }}
 
                 <a href="/change/password" class="btn-password">Change Password</a>

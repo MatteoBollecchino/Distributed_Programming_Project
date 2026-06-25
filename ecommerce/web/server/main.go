@@ -478,6 +478,7 @@ func (s *WebServer) accountHandler(writer http.ResponseWriter, request *http.Req
 		"Username": username,
 		"Role":     role,
 		"Orders":   ordersRes.GetOrders(),
+		"Admin":    "ADMIN",
 	}
 
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "account.html", templateData))
@@ -637,6 +638,10 @@ func (s *WebServer) changePasswordHandler(writer http.ResponseWriter, request *h
 	}
 }
 
+func (s *WebServer) listAllUsersHandler(writer http.ResponseWriter, request *http.Request) {
+	// DA FINIRE
+}
+
 // MAIN ///////////////////////////////////////////////////////////////
 
 func main() {
@@ -673,6 +678,7 @@ func main() {
 	mux.HandleFunc("/login", server.loginHandler)
 	mux.HandleFunc("/logout", server.logoutHandler)
 	mux.HandleFunc("/change/password", server.changePasswordHandler)
+	mux.HandleFunc("/list/users", server.listAllUsersHandler)
 
 	log.Printf("The Web Server listening on %s", port)
 	log.Fatal(http.ListenAndServe(port, mux))
