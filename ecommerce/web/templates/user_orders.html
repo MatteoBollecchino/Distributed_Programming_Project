@@ -150,7 +150,7 @@
                 box-shadow: 0 15px 40px rgba(0,0,0,0.7);
                 text-align: center;
             ">
-                <h2>Orders for {{ .TargetUser }}</h2>
+                <h2>Orders for {{ .Username }}</h2>
                 <p>Manage order history and update delivery statuses</p>
             </div> 
         </section>
@@ -178,16 +178,15 @@
                                 </span>
                             </td>
                             <td>
-                                <form action="/orders/update" method="POST" class="update-form">
+                                <form action="/user/orders?username={{ $.Username }}" method="POST" class="update-form">
                                     
                                     <input type="hidden" name="order_id" value="{{ .GetOrderId }}">
-                                    <input type="hidden" name="target_username" value="{{ $.TargetUser }}">
+                                    <input type="hidden" name="target_username" value="{{ $.Username }}">
                                     
                                     <select name="new_status" class="status-select" required>
-                                        <option value="" disabled selected>Change status...</option>
-                                        <option value="1">SHIPPED</option>
-                                        <option value="2">DELIVERED</option>
-                                        <option value="3">CANCELED</option>
+                                        <option value="2">SHIPPED</option>
+                                        <option value="3">DELIVERED</option>
+                                        <option value="4">CANCELED</option>
                                     </select>
                                     
                                     <button type="submit" class="btn-update">Update</button>

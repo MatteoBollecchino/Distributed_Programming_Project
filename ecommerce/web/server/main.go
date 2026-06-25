@@ -272,43 +272,61 @@ func (s *WebServer) orderHandler(writer http.ResponseWriter, request *http.Reque
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "order.html", templateData))
 }
 
-func (s *WebServer) listOrdersHandler(writer http.ResponseWriter, request *http.Request) {
-	// Only GET requests are accepted
-	if request.Method != http.MethodGet {
-		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
+func (s *WebServer) userOrdersHandler(writer http.ResponseWriter, request *http.Request) {
 	// User must be logged
-	session, ok := checkIfUserIsLogged(s, request, writer)
+	_, ok := checkIfUserIsLogged(s, request, writer)
 	if !ok {
 		return
 	}
-	username := session.Values["username"].(string)
 
-	// gRPC call at Cart service to retrieve the cart
-	cartRes, err := s.clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{
-		Username: username,
-	})
-	if err != nil {
-		log.Printf("Impossible to retrieve shopping cart for %s: %v", username, err)
-		http.Error(writer, "Error in retrieving user cart", http.StatusInternalServerError)
-		return
+	// User GET request -> user's orders page
+	if request.Method == http.MethodGet {
+
+		// Retrieving username from URL
+		username := request.URL.Query().Get("username")
+
+		// gRPC call at Order service to retrieve all the order for a certain user
+		orderRes, err := s.clients.Order.ListOrdersByUser(request.Context(), &pbOrder.ListOrdersByUserRequest{
+			UserId: username,
+		})
+
+		if err != nil {
+			log.Printf("Impossible to retrieve the list of orders for %s: %v", username, err)
+			http.Error(writer, "Error in retrieving list of orders", http.StatusInternalServerError)
+			return
+		}
+
+		// Mapping data for HTML file
+		templateData := map[string]interface{}{
+			"Username": username,
+			"Orders":   orderRes.GetOrders(),
+		}
+
+		log.Printf("List of %s's orders successfully retrieved", username)
+
+		checkerr(writer, s.templates.ExecuteTemplate(writer, "user_orders.html", templateData))
 	}
 
-	// Calculate Totale price
-	var totalPrice float64
-	for _, item := range cartRes.GetCart().GetItems() {
-		totalPrice += float64(item.GetQuantity()) * float64(item.GetPrice())
-	}
+	// User POST request -> update order status
+	if request.Method == http.MethodPost {
 
-	// Mapping data for HTML file
-	templateData := map[string]interface{}{
-		"Items":      cartRes.GetCart().GetItems(),
-		"TotalPrice": math.Trunc(totalPrice*100) / 100,
-	}
+		// Retrieving the order info
+		newStatusStr := request.FormValue("new_status")
+		newStatusValue, err := strconv.Atoi(newStatusStr)
+		checkerr(writer, err)
 
-	checkerr(writer, s.templates.ExecuteTemplate(writer, "order.html", templateData))
+		orderId := request.FormValue("order_id")
+
+		// gRPC call at Order service to update the status of the order
+		_, err = s.clients.Order.UpdateOrderStatus(request.Context(), &pbOrder.UpdateOrderStatusRequest{
+			OrderId: orderId,
+			Status:  pbOrder.OrderStatus(newStatusValue),
+		})
+
+		log.Printf("Status order successfullt updated")
+
+		http.Redirect(writer, request, "/list/users", http.StatusSeeOther)
+	}
 }
 
 // PAYMENT PAGE HANDLER ///////////////////////////////////////////////////////////////
@@ -592,8 +610,8 @@ func (s *WebServer) loginHandler(writer http.ResponseWriter, request *http.Reque
 		checkerr(writer, err)
 
 		// Save user data in the session
-		session.Values["username"] = authRes.GetUser().Username
-		session.Values["role"] = authRes.GetUser().Role.String()
+		session.Values["username"] = authRes.GetUser().GetUsername()
+		session.Values["role"] = authRes.GetUser().GetRole().String()
 		session.Values["logged_in"] = true
 
 		// Saving session
@@ -677,8 +695,8 @@ func (s *WebServer) changePasswordHandler(writer http.ResponseWriter, request *h
 }
 
 func (s *WebServer) listAllUsersHandler(writer http.ResponseWriter, request *http.Request) {
-	// Only POST requests are accepted
-	if request.Method == http.MethodPost {
+	// Only GET requests are accepted
+	if request.Method != http.MethodGet {
 		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -735,7 +753,7 @@ func main() {
 	mux.HandleFunc("/cart/add", server.addToCartHandler)
 	mux.HandleFunc("/cart/remove", server.removeFromCartHandler)
 	mux.HandleFunc("/order", server.orderHandler)
-	mux.HandleFunc("/list/order", server.listOrdersHandler)
+	mux.HandleFunc("/user/orders", server.userOrdersHandler)
 	mux.HandleFunc("/payment", server.paymentHandler)
 	mux.HandleFunc("/payment/process", server.processPaymentHandler)
 	mux.HandleFunc("/account", server.accountHandler)
