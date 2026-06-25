@@ -1,0 +1,208 @@
+{{template "header" .}}
+
+<style>
+    /* ===== Orders Container ===== */
+    .orders-container {
+        max-width: 1000px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    /* ===== Orders Card & Table ===== */
+    .orders-card {
+        background-color: rgba(0,0,0,0.75);
+        border-radius: 16px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        border: 1px solid rgba(245, 197, 66, 0.1);
+    }
+
+    .orders-card h3 {
+        color: #f5c542;
+        font-family: 'Cinzel', serif;
+        font-size: 1.6rem;
+        margin-top: 0;
+        margin-bottom: 25px;
+        border-bottom: 1px solid rgba(245, 197, 66, 0.3);
+        padding-bottom: 15px;
+    }
+
+    .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        text-align: left;
+    }
+
+    .orders-table th {
+        font-family: 'Cinzel', serif;
+        color: #f5c542;
+        border-bottom: 2px solid rgba(245, 197, 66, 0.3);
+        padding: 12px;
+        font-size: 1rem;
+    }
+
+    .orders-table td {
+        padding: 15px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+        vertical-align: middle;
+    }
+
+    .order-id {
+        font-family: monospace;
+        color: #ccc;
+        font-size: 0.95rem;
+        font-weight: bold;
+    }
+
+    .no-orders {
+        text-align: center;
+        color: #aaa;
+        font-style: italic;
+        padding: 20px 0;
+    }
+
+    /* ===== Status Badge ===== */
+    .status-badge {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        background-color: rgba(245, 197, 66, 0.2);
+        color: #f5c542;
+        border: 1px solid #f5c542;
+    }
+
+    /* ===== Update Form Elements ===== */
+    .update-form {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .status-select {
+        background-color: rgba(0, 0, 0, 0.5);
+        color: #fff;
+        border: 1px solid rgba(245, 197, 66, 0.5);
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        outline: none;
+        transition: border-color 0.3s;
+    }
+
+    .status-select:focus {
+        border-color: #f5c542;
+    }
+
+    .status-select option {
+        background-color: #222;
+        color: #fff;
+    }
+
+    .btn-update {
+        padding: 8px 20px;
+        background-color: #f5c542;
+        color: #000;
+        border: none;
+        font-weight: bold;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 0.9rem;
+    }
+
+    .btn-update:hover {
+        background-color: #ffd966;
+        transform: scale(1.05);
+    }
+    
+    .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        color: #aaaaaa;
+        text-decoration: none;
+        font-size: 0.95rem;
+        transition: color 0.2s;
+    }
+
+    .back-link:hover {
+        color: #f5c542;
+    }
+
+</style>
+
+<body>
+    
+    <div style="max-width: 1000px; margin: 40px auto; padding: 0 20px;">
+        <a href="/list/users" class="back-link">← Back to Users List</a>
+        
+        <section class="page-title">
+            <div style="
+                background: rgba(20, 20, 40, 0.8);
+                padding: 45px;
+                border-radius: 18px;
+                color: #fff;
+                box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+                text-align: center;
+            ">
+                <h2>Orders for {{ .TargetUser }}</h2>
+                <p>Manage order history and update delivery statuses</p>
+            </div> 
+        </section>
+    </div>
+
+    <div class="orders-container">
+        <section class="orders-card">
+            
+            {{ if .Orders }}
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Current Status</th>
+                            <th style="text-align: right;">Update Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .Orders }}
+                        <tr>
+                            <td class="order-id">{{ .GetOrderId }}</td>
+                            <td>
+                                <span class="status-badge status-{{ .Status }}">
+                                    {{ .GetStatus }}
+                                </span>
+                            </td>
+                            <td>
+                                <form action="/orders/update" method="POST" class="update-form">
+                                    
+                                    <input type="hidden" name="order_id" value="{{ .GetOrderId }}">
+                                    <input type="hidden" name="target_username" value="{{ $.TargetUser }}">
+                                    
+                                    <select name="new_status" class="status-select" required>
+                                        <option value="" disabled selected>Change status...</option>
+                                        <option value="1">SHIPPED</option>
+                                        <option value="2">DELIVERED</option>
+                                        <option value="3">CANCELED</option>
+                                    </select>
+                                    
+                                    <button type="submit" class="btn-update">Update</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            {{ else }}
+                <p class="no-orders">This user hasn't placed any orders yet.</p>
+            {{ end }}
+        </section>
+    </div>
+
+</body>
+
+{{template "footer" .}}

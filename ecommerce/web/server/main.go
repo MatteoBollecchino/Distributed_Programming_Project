@@ -272,6 +272,45 @@ func (s *WebServer) orderHandler(writer http.ResponseWriter, request *http.Reque
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "order.html", templateData))
 }
 
+func (s *WebServer) listOrdersHandler(writer http.ResponseWriter, request *http.Request) {
+	// Only GET requests are accepted
+	if request.Method != http.MethodGet {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// User must be logged
+	session, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
+		return
+	}
+	username := session.Values["username"].(string)
+
+	// gRPC call at Cart service to retrieve the cart
+	cartRes, err := s.clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{
+		Username: username,
+	})
+	if err != nil {
+		log.Printf("Impossible to retrieve shopping cart for %s: %v", username, err)
+		http.Error(writer, "Error in retrieving user cart", http.StatusInternalServerError)
+		return
+	}
+
+	// Calculate Totale price
+	var totalPrice float64
+	for _, item := range cartRes.GetCart().GetItems() {
+		totalPrice += float64(item.GetQuantity()) * float64(item.GetPrice())
+	}
+
+	// Mapping data for HTML file
+	templateData := map[string]interface{}{
+		"Items":      cartRes.GetCart().GetItems(),
+		"TotalPrice": math.Trunc(totalPrice*100) / 100,
+	}
+
+	checkerr(writer, s.templates.ExecuteTemplate(writer, "order.html", templateData))
+}
+
 // PAYMENT PAGE HANDLER ///////////////////////////////////////////////////////////////
 
 func (s *WebServer) paymentHandler(writer http.ResponseWriter, request *http.Request) {
@@ -545,7 +584,6 @@ func (s *WebServer) loginHandler(writer http.ResponseWriter, request *http.Reque
 		if err != nil {
 			log.Printf("Failed Login: %v", err)
 			checkerr(writer, s.templates.ExecuteTemplate(writer, "login.html", "Username or password are not valid"))
-			//http.Redirect(writer, request, "/login", http.StatusSeeOther)
 			return
 		}
 
@@ -598,7 +636,7 @@ func (s *WebServer) changePasswordHandler(writer http.ResponseWriter, request *h
 		return
 	}
 
-	// User GET request -> register page
+	// User GET request -> change password page
 	if request.Method == http.MethodGet {
 		checkerr(writer, s.templates.ExecuteTemplate(writer, "change_password.html", nil))
 		return
@@ -639,7 +677,33 @@ func (s *WebServer) changePasswordHandler(writer http.ResponseWriter, request *h
 }
 
 func (s *WebServer) listAllUsersHandler(writer http.ResponseWriter, request *http.Request) {
-	// DA FINIRE
+	// Only POST requests are accepted
+	if request.Method == http.MethodPost {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// User must be logged
+	_, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
+		return
+	}
+
+	users, err := s.clients.Auth.GetAllUsers(request.Context(), &pbAuth.GetAllUsersRequest{})
+	if err != nil {
+		log.Printf("Failed in Retrieving Users: %v", err)
+		http.Error(writer, "Failed in Retrieving Users", http.StatusInternalServerError)
+		return
+	}
+
+	// Preparing user data for HTML template
+	templateData := map[string]interface{}{
+		"Users": users.GetUsers(),
+	}
+
+	log.Printf("Users successfully listed")
+
+	checkerr(writer, s.templates.ExecuteTemplate(writer, "list_users.html", templateData))
 }
 
 // MAIN ///////////////////////////////////////////////////////////////
@@ -671,6 +735,7 @@ func main() {
 	mux.HandleFunc("/cart/add", server.addToCartHandler)
 	mux.HandleFunc("/cart/remove", server.removeFromCartHandler)
 	mux.HandleFunc("/order", server.orderHandler)
+	mux.HandleFunc("/list/order", server.listOrdersHandler)
 	mux.HandleFunc("/payment", server.paymentHandler)
 	mux.HandleFunc("/payment/process", server.processPaymentHandler)
 	mux.HandleFunc("/account", server.accountHandler)
