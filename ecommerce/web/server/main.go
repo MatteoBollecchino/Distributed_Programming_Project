@@ -72,7 +72,7 @@ func (s *WebServer) welcomeHandler(writer http.ResponseWriter, request *http.Req
 
 // CATALOG PAGE HANDLER ///////////////////////////////////////////////////////////////
 
-func (s *WebServer) productCatalogHandler(writer http.ResponseWriter, request *http.Request) {
+func (s *WebServer) catalogHandler(writer http.ResponseWriter, request *http.Request) {
 	// Request products from the catalog microservice via gRPC using s.clients
 	catalogRes, err := s.clients.Catalog.ListCatalogItems(request.Context(), &pbCatalog.ListCatalogItemsRequest{})
 	if !checkerr(writer, err) {
@@ -105,6 +105,18 @@ func (s *WebServer) productCatalogHandler(writer http.ResponseWriter, request *h
 	if !checkerr(writer, s.templates.ExecuteTemplate(writer, "catalog.html", templateData)) {
 		return
 	}
+}
+
+func (s *WebServer) addToCatalogHandler(writer http.ResponseWriter, request *http.Request) {
+}
+
+func (s *WebServer) removeFromCatalogHandler(writer http.ResponseWriter, request *http.Request) {
+}
+
+func (s *WebServer) updatePriceCatalogHandler(writer http.ResponseWriter, request *http.Request) {
+}
+
+func (s *WebServer) updateQuantityCatalogHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 // CART PAGE HANDLERS ///////////////////////////////////////////////////////////////
@@ -258,7 +270,7 @@ func (s *WebServer) removeFromCartHandler(writer http.ResponseWriter, request *h
 	http.Redirect(writer, request, "/cart", http.StatusSeeOther)
 }
 
-func (s *WebServer) updateQuantityHandler(writer http.ResponseWriter, request *http.Request) {
+func (s *WebServer) updateQuantityCartHandler(writer http.ResponseWriter, request *http.Request) {
 	// Only POST requests are accepted
 	if request.Method != http.MethodPost {
 		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
@@ -810,14 +822,17 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-
 	// Association of paths to correspondent handlers
 	mux.HandleFunc("/welcome", server.welcomeHandler)
-	mux.HandleFunc("/catalog", server.productCatalogHandler)
+	mux.HandleFunc("/catalog", server.catalogHandler)
+	mux.HandleFunc("/catalog/add", server.addToCatalogHandler)
+	mux.HandleFunc("/catalog/remove", server.removeFromCatalogHandler)
+	mux.HandleFunc("/catalog/update/price", server.updatePriceCatalogHandler)
+	mux.HandleFunc("/catalog/update/quantity", server.updateQuantityCatalogHandler)
 	mux.HandleFunc("/cart", server.cartHandler)
 	mux.HandleFunc("/cart/add", server.addToCartHandler)
 	mux.HandleFunc("/cart/remove", server.removeFromCartHandler)
-	mux.HandleFunc("/cart/update", server.updateQuantityHandler)
+	mux.HandleFunc("/cart/update", server.updateQuantityCartHandler)
 	mux.HandleFunc("/order", server.orderHandler)
 	mux.HandleFunc("/user/orders", server.userOrdersHandler)
 	mux.HandleFunc("/payment", server.paymentHandler)

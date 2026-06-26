@@ -223,6 +223,10 @@
 
                 {{ if eq .Role .Admin}}
                     <a href="/list/users" class="btn-list-users">List All Users</a>
+                    <a href="/catalog/add" class="btn-list-users">Add Catalog Item</a>
+                    <a href="/catalog/remove" class="btn-list-users">Remove Catalog Item</a>
+                    <a href="/catalog/update/price" class="btn-list-users">Update Catalog Item Price</a>
+                    <a href="/catalog/update/quantity" class="btn-list-users">Update Catalog Item Quantity</a>
                 {{ end }}
 
                 <a href="/change/password" class="btn-password">Change Password</a>
