@@ -258,6 +258,45 @@ func (s *WebServer) removeFromCartHandler(writer http.ResponseWriter, request *h
 	http.Redirect(writer, request, "/cart", http.StatusSeeOther)
 }
 
+func (s *WebServer) updateQuantityHandler(writer http.ResponseWriter, request *http.Request) {
+	// Only POST requests are accepted
+	if request.Method != http.MethodPost {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// User must be logged
+	session, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
+		return
+	}
+
+	// Retrieve user and product data
+	productId := request.FormValue("product_id")
+	username := session.Values["username"].(string)
+	quantityStr := request.FormValue("quantity")
+
+	quantity, err := strconv.Atoi(quantityStr)
+	if !checkerr(writer, err) {
+		return
+	}
+
+	// gRPC call at Cart service
+	_, err = s.clients.Cart.UpdateItemQuantity(request.Context(), &pbCart.UpdateItemQuantityRequest{
+		Username: username,
+		ItemId:   productId,
+		Quantity: uint32(quantity),
+	})
+	if !checkerr(writer, err) {
+		return
+	}
+
+	log.Printf("Product quantity successfully updated")
+
+	// Redirection to shopping cart page
+	http.Redirect(writer, request, "/cart", http.StatusSeeOther)
+}
+
 // ORDER PAGE HANDLER ///////////////////////////////////////////////////////////////
 
 func (s *WebServer) orderHandler(writer http.ResponseWriter, request *http.Request) {
@@ -778,6 +817,7 @@ func main() {
 	mux.HandleFunc("/cart", server.cartHandler)
 	mux.HandleFunc("/cart/add", server.addToCartHandler)
 	mux.HandleFunc("/cart/remove", server.removeFromCartHandler)
+	mux.HandleFunc("/cart/update", server.updateQuantityHandler)
 	mux.HandleFunc("/order", server.orderHandler)
 	mux.HandleFunc("/user/orders", server.userOrdersHandler)
 	mux.HandleFunc("/payment", server.paymentHandler)

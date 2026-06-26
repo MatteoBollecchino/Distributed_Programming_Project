@@ -60,6 +60,23 @@
         transform: scale(1.05);
     }
 
+    .btn-update {
+        padding: 8px 15px;
+        border: 1px solid #f5c542;
+        border-radius: 20px;
+        background-color: transparent;
+        color: #f5c542;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-update:hover {
+        background-color: #f5c542;
+        color: #fff;
+        transform: scale(1.05);
+    }
+
     .cart-summary {
         background-color: rgba(20, 20, 40, 0.8);
         padding: 30px;
@@ -106,6 +123,7 @@
         border-radius: 16px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     }
+
 </style>
 
 <body>
@@ -131,7 +149,8 @@
                             <th>Item ID</th>
                             <th>Price</th>
                             <th>Quantity</th>
-                            <th>Actions</th>
+                            <th>Update</th>
+                            <th>Remove</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -140,6 +159,32 @@
                                 <td><strong>{{ .GetItemId}}</strong></td>
                                 <td>€{{ .GetPrice }}</td>
                                 <td>{{ .GetQuantity }}</td>
+                                <td>
+                                    <form action="/cart/update" method="POST" style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+                                        <input type="hidden" name="product_id" value="{{ .GetItemId }}">
+                                        
+                                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                            <label for="quantity-{{ .GetItemId }}" style="font-size: 0.9rem; opacity: 0.8;">Qty:</label>
+                                            <input type="number" 
+                                                id="quantity-{{ .GetItemId }}" 
+                                                name="quantity" 
+                                                value="1" 
+                                                min="1" 
+                                                max="{{ .GetQuantity }}" 
+                                                style="
+                                                    width: 60px; 
+                                                    padding: 5px; 
+                                                    border-radius: 8px; 
+                                                    border: 1px solid #f5c542; 
+                                                    background: #000; 
+                                                    color: #fff; 
+                                                    text-align: center;
+                                                ">
+                                        </div>
+                                    
+                                        <button type="submit" class="btn-update">Update</button>
+                                    </form>
+                                </td>
                                 <td>
                                     <form action="/cart/remove" method="POST" style="margin: 0;">
                                         <input type="hidden" name="product_id" value="{{ .GetItemId }}">
