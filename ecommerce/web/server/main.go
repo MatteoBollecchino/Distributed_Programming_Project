@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"html/template"
 	"log"
 	"math"
@@ -102,15 +103,126 @@ func (s *WebServer) catalogHandler(writer http.ResponseWriter, request *http.Req
 		"Username":   username,
 	}
 
-	if !checkerr(writer, s.templates.ExecuteTemplate(writer, "catalog.html", templateData)) {
+	checkerr(writer, s.templates.ExecuteTemplate(writer, "catalog.html", templateData))
+}
+
+func (s *WebServer) updateCatalogHandler(writer http.ResponseWriter, request *http.Request) {
+	// User must be
+	session, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
 		return
 	}
+	role := session.Values["role"].(string)
+
+	templateData := map[string]interface{}{
+		"Role":  role,
+		"Admin": "ADMIN",
+	}
+
+	// Only GET requests are accepted
+	if request.Method != http.MethodGet {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	checkerr(writer, s.templates.ExecuteTemplate(writer, "update_catalog.html", templateData))
 }
 
 func (s *WebServer) addToCatalogHandler(writer http.ResponseWriter, request *http.Request) {
+	// User must be logged
+	session, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
+		return
+	}
+	username := session.Values["username"]
+	role := session.Values["role"].(string)
+
+	// Only POST requests are accepted
+	if request.Method != http.MethodPost {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Check if user is an admin
+	if role != "ADMIN" {
+		checkerr(writer, errors.New("User Must be an admin to do this operation"))
+		return
+	}
+
+	// Retrieve item data
+	itemId := request.FormValue("item_id")
+	description := request.FormValue("description")
+	priceStr := request.FormValue("price")
+	quantityStr := request.FormValue("quantity")
+
+	price, err := strconv.ParseFloat(priceStr, 64)
+	if !checkerr(writer, err) {
+		return
+	}
+
+	quantity, err := strconv.Atoi(quantityStr)
+	if !checkerr(writer, err) {
+		return
+	}
+
+	// Creating catalog item
+	item := pbCatalog.CatalogItem{
+		ItemId:            itemId,
+		Description:       description,
+		Price:             price,
+		QuantityAvailable: uint32(quantity),
+	}
+
+	// Calling catalog service via gRPC
+	_, err = s.clients.Catalog.AddCatalogItem(request.Context(), &pbCatalog.AddCatalogItemRequest{
+		Item: &item,
+	})
+	if !checkerr(writer, err) {
+		return
+	}
+
+	log.Printf("New Item successfully added to catalog by %s", username)
+
+	// Redirection to catalog page
+	http.Redirect(writer, request, "/catalog", http.StatusSeeOther)
 }
 
 func (s *WebServer) removeFromCatalogHandler(writer http.ResponseWriter, request *http.Request) {
+	// User must be logged
+	session, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
+		return
+	}
+	username := session.Values["username"]
+	role := session.Values["role"].(string)
+
+	// Only POST requests are accepted
+	if request.Method != http.MethodPost {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Check if user is an admin
+	if role != "ADMIN" {
+		checkerr(writer, errors.New("User Must be an admin to do this operation"))
+		return
+	}
+
+	// Retrieve item data
+	itemId := request.FormValue("item_id")
+
+	// Calling catalog service via gRPC
+	_, err := s.clients.Catalog.RemoveCatalogItem(request.Context(), &pbCatalog.RemoveCatalogItemRequest{
+		ItemId: itemId,
+	})
+	if !checkerr(writer, err) {
+		return
+	}
+
+	log.Printf("Item successfully removed from catalog by %s", username)
+
+	// Redirection to catalog page
+	http.Redirect(writer, request, "/catalog", http.StatusSeeOther)
 }
 
 func (s *WebServer) updatePriceCatalogHandler(writer http.ResponseWriter, request *http.Request) {
@@ -159,11 +271,6 @@ func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Reques
 	if !checkerr(writer, err) {
 		return
 	}
-	/*if err != nil {
-		log.Printf("Error calculating cart's total price: %v", err)
-		http.Error(writer, "Error calculating cart's total price", http.StatusInternalServerError)
-		return
-	}*/
 
 	// Mapping data for HTML file
 	templateData := map[string]interface{}{
@@ -171,9 +278,7 @@ func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Reques
 		"TotalPrice": math.Trunc(totalPriceRes.GetTotalPrice()*100) / 100,
 	}
 
-	if !checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", templateData)) {
-		return
-	}
+	checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", templateData))
 }
 
 func (s *WebServer) addToCartHandler(writer http.ResponseWriter, request *http.Request) {
@@ -200,11 +305,6 @@ func (s *WebServer) addToCartHandler(writer http.ResponseWriter, request *http.R
 	if !checkerr(writer, err) {
 		return
 	}
-	/*if err != nil {
-		log.Printf("Error in price conversion '%s': %v", priceStr, err)
-		http.Error(writer, "Price not valid", http.StatusBadRequest)
-		return
-	}*/
 
 	// Quantity Conversion
 	quantity, err := strconv.Atoi(quantityStr)
@@ -443,6 +543,8 @@ func (s *WebServer) paymentHandler(writer http.ResponseWriter, request *http.Req
 		})
 	}
 
+	// Before creating order, check if the items are still in the catalog
+
 	// Creation of the Order
 	orderRes, err := s.clients.Order.CreateOrder(request.Context(), &pbOrder.CreateOrderRequest{
 		UserId:     username,
@@ -676,7 +778,6 @@ func (s *WebServer) loginHandler(writer http.ResponseWriter, request *http.Reque
 
 		// In case of error -> redirection to login page
 		if err != nil {
-			// log.Printf("Failed Login: %v", err)
 			checkerr(writer, s.templates.ExecuteTemplate(writer, "login.html", "Username or password are not valid"))
 			return
 		}
@@ -829,6 +930,7 @@ func main() {
 	mux.HandleFunc("/catalog/remove", server.removeFromCatalogHandler)
 	mux.HandleFunc("/catalog/update/price", server.updatePriceCatalogHandler)
 	mux.HandleFunc("/catalog/update/quantity", server.updateQuantityCatalogHandler)
+	mux.HandleFunc("/update/catalog", server.updateCatalogHandler)
 	mux.HandleFunc("/cart", server.cartHandler)
 	mux.HandleFunc("/cart/add", server.addToCartHandler)
 	mux.HandleFunc("/cart/remove", server.removeFromCartHandler)

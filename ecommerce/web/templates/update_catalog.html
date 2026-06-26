@@ -1,0 +1,255 @@
+{{template "header" .}}
+
+<style>
+    /* ===== Page Layout ===== */
+    .admin-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .admin-card {
+        background-color: rgba(0, 0, 0, 0.75);
+        border-radius: 16px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        border: 1px solid rgba(245, 197, 66, 0.2);
+    }
+
+    .admin-card h3 {
+        font-family: 'Cinzel', serif;
+        color: #f5c542;
+        font-size: 1.6rem;
+        margin-top: 0;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    /* ===== PURE CSS TABS SYSTEM ===== */
+    
+    /* Hide real radio buttons */
+    .tab-radio {
+        display: none;
+    }
+
+    /* Containers and labels style */
+    .tabs {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 30px;
+        border-bottom: 1px solid rgba(245, 197, 66, 0.3);
+        padding-bottom: 15px;
+        flex-wrap: wrap;
+    }
+
+    .tab-label {
+        background-color: transparent;
+        color: #aaaaaa;
+        border: 1px solid #aaaaaa;
+        padding: 10px 20px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s;
+        font-size: 0.9rem;
+    }
+
+    .tab-label:hover {
+        color: #f5c542;
+        border-color: #f5c542;
+    }
+
+    /* Hide all default forms*/
+    .form-section {
+        display: none;
+        animation: fadeIn 0.4s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* When radio is checked -> modify label and form */
+    
+    /* Colora la label attiva */
+    #radio-add:checked ~ .tabs label[for="radio-add"],
+    #radio-quantity:checked ~ .tabs label[for="radio-quantity"],
+    #radio-price:checked ~ .tabs label[for="radio-price"],
+    #radio-remove:checked ~ .tabs label[for="radio-remove"] {
+        background-color: #f5c542;
+        color: #000;
+        border-color: #f5c542;
+    }
+
+    /* Show correspondent form */
+    #radio-add:checked ~ #tab-add,
+    #radio-quantity:checked ~ #tab-quantity,
+    #radio-price:checked ~ #tab-price,
+    #radio-remove:checked ~ #tab-remove {
+        display: block;
+    }
+
+    /* ===== Form Inputs ===== */
+    .form-group {
+        margin-bottom: 20px;
+        text-align: left;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+        color: #ccc;
+    }
+
+    .form-group input, .form-group textarea {
+        width: 100%;
+        padding: 12px 15px;
+        box-sizing: border-box;
+        background-color: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: white;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+        font-family: inherit;
+    }
+
+    .form-group input:focus, .form-group textarea:focus {
+        border-color: #f5c542;
+        outline: none;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 14px 0;
+        border: none;
+        border-radius: 25px;
+        background-color: #f5c542;
+        color: #000;
+        font-weight: bold;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 10px;
+    }
+
+    .btn-submit:hover {
+        background-color: #ffd966;
+        transform: scale(1.02);
+    }
+    
+    .btn-submit.danger {
+        background-color: transparent;
+        border: 2px solid #dc3545;
+        color: #dc3545;
+    }
+    
+    .btn-submit.danger:hover {
+        background-color: #dc3545;
+        color: #fff;
+    }
+
+</style>
+
+<body>
+
+    {{ if eq .Role .Admin}}
+    
+        <div class="admin-container">
+            <section class="page-title" style="text-align: center; margin-bottom: 30px;">
+                <div style="background: rgba(20, 20, 40, 0.8); padding: 40px; border-radius: 18px; box-shadow: 0 15px 40px rgba(0,0,0,0.7);">
+                    <h2>Catalog Management</h2>
+                    <p>Admin dashboard to modify store items</p>
+                </div>
+            </section>
+
+            <div class="admin-card">
+
+                <input type="radio" name="catalog-tabs" id="radio-add" class="tab-radio" checked>
+                <input type="radio" name="catalog-tabs" id="radio-quantity" class="tab-radio">
+                <input type="radio" name="catalog-tabs" id="radio-price" class="tab-radio">
+                <input type="radio" name="catalog-tabs" id="radio-remove" class="tab-radio">
+
+                <div class="tabs">
+                    <label for="radio-add" class="tab-label">Add Item</label>
+                    <label for="radio-quantity" class="tab-label">Update Quantity</label>
+                    <label for="radio-price" class="tab-label">Update Price</label>
+                    <label for="radio-remove" class="tab-label">Remove Item</label>
+                </div>
+
+                <div id="tab-add" class="form-section">
+                    <h3>Add New Item</h3>
+                    <form action="/catalog/add" method="POST">
+                        <div class="form-group">
+                            <label> Item ID </label>
+                            <input type="text" name="item_id" required>
+                        </div>
+                        <div class="form-group">
+                            <label> Description</label>
+                            <textarea name="description" rows="3" required></textarea>
+                        </div>
+                        <div style="display: flex; gap: 15px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label> Quantity </label>
+                                <input type="number" name="quantity" min="0" step="1" required>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label> Price </label>
+                                <input type="number" name="price" min="0.01" step="0.01" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-submit">Add to Catalog</button>
+                    </form>
+                </div>
+
+                <div id="tab-quantity" class="form-section">
+                    <h3>Update Quantity</h3>
+                    <form action="/catalog/update/quantity" method="POST">
+                        <div class="form-group">
+                            <label> Item ID </label>
+                            <input type="text" name="item_id" required>
+                        </div>
+                        <div class="form-group">
+                            <label> New Quantity Available </label>
+                            <input type="number" name="quantity" min="0" step="1" required>
+                        </div>
+                        <button type="submit" class="btn-submit">Save Quantity</button>
+                    </form>
+                </div>
+
+                <div id="tab-price" class="form-section">
+                    <h3>Update Price</h3>
+                    <form action="/catalog/update/price" method="POST">
+                        <div class="form-group">
+                            <label> Item ID </label>
+                            <input type="text" name="item_id" required>
+                        </div>
+                        <div class="form-group">
+                            <label> New Price </label>
+                            <input type="number" name="price" min="0.01" step="0.01" required>
+                        </div>
+                        <button type="submit" class="btn-submit">Save Price</button>
+                    </form>
+                </div>
+
+                <div id="tab-remove" class="form-section">
+                    <h3>Remove Item</h3>
+                    <form action="/catalog/remove" method="POST">
+                        <div class="form-group">
+                            <label> Item ID </label>
+                            <input type="text" name="item_id">
+                        </div>
+                        <button type="submit" class="btn-submit danger">Delete Permanently</button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+    {{ end }}
+</body>
+
+{{template "footer" .}}
