@@ -370,10 +370,18 @@ func (s *WebServer) cartHandler(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
+	errorMessage := ""
+	queryError := request.URL.Query().Get("error")
+
+	if queryError == "catalog_changed" {
+		errorMessage = "Catalog has been updated. Items could have been changed or removed."
+	}
+
 	// Mapping data for HTML file
 	templateData := map[string]interface{}{
 		"Items":      cartRes.GetCart().GetItems(),
 		"TotalPrice": math.Trunc(totalPriceRes.GetTotalPrice()*100) / 100,
+		"Error":      errorMessage,
 	}
 
 	checkerr(writer, s.templates.ExecuteTemplate(writer, "cart.html", templateData))
@@ -643,21 +651,46 @@ func (s *WebServer) paymentHandler(writer http.ResponseWriter, request *http.Req
 			ItemId: itemId,
 		})
 
-		// DA FINIRE
-		// If the item is no more in the catalog it will be deleted from the cart
+		// Catalog item removed -> item removed also from cart
 		if err != nil || getRes.GetErrorMessage() != "" {
 			_, err = s.clients.Cart.RemoveItemFromCart(request.Context(), &pbCart.RemoveItemFromCartRequest{
-				ItemId: itemId,
+				Username: username,
+				ItemId:   itemId,
 			})
 			if !checkerr(writer, err) {
 				return
 			}
+
+			// Redirection to cart page
+			http.Redirect(writer, request, "/cart?error=catalog_changed", http.StatusSeeOther)
+			return
+		}
+
+		// Catalog item price or quantity updated -> Item removed from cart and error message
+		catalogItem := getRes.GetItem()
+		cartQuantity := cartItem.GetQuantity()
+		cartPrice := cartItem.GetPrice()
+		// Quantity of the item in the cart greater than the quantity in the catalog -> error
+		if cartQuantity > catalogItem.GetQuantityAvailable() || cartPrice != catalogItem.GetPrice() {
+
+			// In case of error item is removed from cart
+			_, err = s.clients.Cart.RemoveItemFromCart(request.Context(), &pbCart.RemoveItemFromCartRequest{
+				Username: username,
+				ItemId:   itemId,
+			})
+			if !checkerr(writer, err) {
+				return
+			}
+
+			// Redirection to cart page
+			http.Redirect(writer, request, "/cart?error=catalog_changed", http.StatusSeeOther)
+			return
 		}
 
 		orderItems = append(orderItems, &pbOrder.OrderItem{
 			ItemId:   itemId,
-			Quantity: cartItem.GetQuantity(),
-			Price:    cartItem.GetPrice(),
+			Quantity: cartQuantity,
+			Price:    cartPrice,
 		})
 	}
 
