@@ -145,8 +145,8 @@
         transform: scale(1.05);
     }
 
-    /* ===== Change Password Button ===== */
-    .btn-password {
+    /* ===== Functionality Button ===== */
+    .btn {
         display: inline-block;
         padding: 12px 35px;
         background-color: transparent;
@@ -159,28 +159,8 @@
         font-size: 1rem;
     }
 
-    .btn-password:hover {
-        background-color: #4260f5;;
-        color: #fff;
-        transform: scale(1.05);
-    }
-
-    /* ===== List Users Button ===== */
-    .btn-list-users {
-        display: inline-block;
-        padding: 12px 35px;
-        background-color: transparent;
-        color: #f5c542;;
-        border: 2px solid #f5c542;;
-        text-decoration: none;
-        font-weight: bold;
-        border-radius: 25px;
-        transition: all 0.3s;
-        font-size: 1rem;
-    }
-
-    .btn-list-users:hover {
-        background-color: #4260f5;;
+    .btn:hover {
+        background-color: rgba(0, 123, 255, 0.2);
         color: #fff;
         transform: scale(1.05);
     }
@@ -222,11 +202,11 @@
                 {{ end }}
 
                 {{ if eq .Role .Admin}}
-                    <a href="/list/users" class="btn-list-users">List All Users</a>
-                    <a href="/update/catalog" class="btn-list-users">Update Catalog</a>
+                    <a href="/list/users" class="btn">List All Users</a>
+                    <a href="/update/catalog" class="btn">Update Catalog</a>
                 {{ end }}
 
-                <a href="/change/password" class="btn-password">Change Password</a>
+                <a href="/change/password" class="btn">Change Password</a>
                 <a href="/logout" class="btn-logout">Log Out</a>
             </section>
 
