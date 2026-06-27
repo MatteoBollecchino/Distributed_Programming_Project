@@ -16,6 +16,18 @@
     </style>
 </head>
 
+<script>
+    // Background connection to Go server
+    const eventSource = new EventSource('http://localhost:8080/events');
+
+    // When "reload" message from server, refresh page
+    eventSource.onmessage = function(event) {
+        if (event.data === 'reload') {
+            window.location.reload();
+        }
+    };
+</script>
+
 <body>
     <footer>
         © 2026 FantaWorld – All Rights Reserved

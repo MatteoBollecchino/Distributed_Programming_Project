@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
 	"log"
 	"math"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 
 	pbAuth "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth"
 	pbCart "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/cart"
@@ -29,6 +31,12 @@ type WebServer struct {
 	clients   *clients.ServiceClients
 	store     *sessions.CookieStore
 }
+
+// Global channel to notify users of catalog's updates, protected by mutex
+var (
+	clientsMu  sync.Mutex
+	mapClients = make(map[chan struct{}]bool)
+)
 
 func checkerr(writer http.ResponseWriter, err error) bool {
 	ok := true
@@ -61,6 +69,61 @@ func checkIfUserIsLogged(s *WebServer, request *http.Request, writer http.Respon
 		return nil, false
 	}
 	return session, true
+}
+
+// Handler for the events
+func (s *WebServer) eventsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming non supportato", http.StatusInternalServerError)
+		return
+	}
+
+	// Creiamo un canale unico per QUESTO specifico client/tab
+	messageChan := make(chan struct{}, 1)
+
+	// Registriamo il client nella mappa globale
+	clientsMu.Lock()
+	mapClients[messageChan] = true
+	clientsMu.Unlock()
+
+	// Quando l'utente chiude il tab, lo cancelliamo dalla mappa
+	defer func() {
+		clientsMu.Lock()
+		delete(mapClients, messageChan)
+		clientsMu.Unlock()
+		close(messageChan)
+	}()
+
+	for {
+		select {
+		case <-messageChan:
+			// Inviamo il comando di reload al browser
+			fmt.Fprintf(w, "data: reload\n\n")
+			flusher.Flush()
+		case <-r.Context().Done():
+			return
+		}
+	}
+}
+
+// 2. La funzione da chiamare negli handler dell'Admin dopo la modifica gRPC
+func notifyCatalogUpdate() {
+	clientsMu.Lock()
+	defer clientsMu.Unlock()
+
+	// Invia il segnale di sveglia a TUTTI i client connessi
+	for messageChan := range mapClients {
+		select {
+		case messageChan <- struct{}{}:
+		default:
+			// Il canale è già pieno, non lo blocchiamo
+		}
+	}
 }
 
 // WELCOME PAGE HANDLER ///////////////////////////////////////////////////////////////
@@ -181,6 +244,9 @@ func (s *WebServer) addToCatalogHandler(writer http.ResponseWriter, request *htt
 		return
 	}
 
+	// Notification that the catalog has changed
+	notifyCatalogUpdate()
+
 	log.Printf("New Item successfully added to catalog by %s", username)
 
 	// Redirection to catalog page
@@ -219,6 +285,9 @@ func (s *WebServer) removeFromCatalogHandler(writer http.ResponseWriter, request
 		return
 	}
 
+	// Notification that the catalog has changed
+	notifyCatalogUpdate()
+
 	log.Printf("Item successfully removed from catalog by %s", username)
 
 	// Redirection to catalog page
@@ -226,6 +295,51 @@ func (s *WebServer) removeFromCatalogHandler(writer http.ResponseWriter, request
 }
 
 func (s *WebServer) updatePriceCatalogHandler(writer http.ResponseWriter, request *http.Request) {
+	// User must be logged
+	session, ok := checkIfUserIsLogged(s, request, writer)
+	if !ok {
+		return
+	}
+	username := session.Values["username"]
+	role := session.Values["role"].(string)
+
+	// Only POST requests are accepted
+	if request.Method != http.MethodPost {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Check if user is an admin
+	if role != "ADMIN" {
+		checkerr(writer, errors.New("User Must be an admin to do this operation"))
+		return
+	}
+
+	// Retrieve item data
+	itemId := request.FormValue("item_id")
+	priceStr := request.FormValue("price")
+
+	price, err := strconv.ParseFloat(priceStr, 64)
+	if !checkerr(writer, err) {
+		return
+	}
+
+	// Calling catalog service via gRPC
+	_, err = s.clients.Catalog.UpdatePrice(request.Context(), &pbCatalog.UpdatePriceRequest{
+		ItemId: itemId,
+		Price:  price,
+	})
+	if !checkerr(writer, err) {
+		return
+	}
+
+	// Notification that the catalog has changed
+	notifyCatalogUpdate()
+
+	log.Printf("Item Price successfully updated by %s", username)
+
+	// Redirection to catalog page
+	http.Redirect(writer, request, "/catalog", http.StatusSeeOther)
 }
 
 func (s *WebServer) updateQuantityCatalogHandler(writer http.ResponseWriter, request *http.Request) {
@@ -536,14 +650,32 @@ func (s *WebServer) paymentHandler(writer http.ResponseWriter, request *http.Req
 	// OrderItems are created depending on CartItems
 	var orderItems []*pbOrder.OrderItem
 	for _, cartItem := range cartRes.GetCart().GetItems() {
+
+		// Before creating order, check if the items are still in the catalog
+
+		// Retrieve catalog item that was in cart
+		itemId := cartItem.GetItemId()
+		getRes, err := s.clients.Catalog.GetCatalogItem(request.Context(), &pbCatalog.GetCatalogItemRequest{
+			ItemId: itemId,
+		})
+
+		// DA FINIRE
+		// If the item is no more in the catalog it will be deleted from the cart
+		if err != nil || getRes.GetErrorMessage() != "" {
+			_, err = s.clients.Cart.RemoveItemFromCart(request.Context(), &pbCart.RemoveItemFromCartRequest{
+				ItemId: itemId,
+			})
+			if !checkerr(writer, err) {
+				return
+			}
+		}
+
 		orderItems = append(orderItems, &pbOrder.OrderItem{
-			ItemId:   cartItem.GetItemId(),
+			ItemId:   itemId,
 			Quantity: cartItem.GetQuantity(),
 			Price:    cartItem.GetPrice(),
 		})
 	}
-
-	// Before creating order, check if the items are still in the catalog
 
 	// Creation of the Order
 	orderRes, err := s.clients.Order.CreateOrder(request.Context(), &pbOrder.CreateOrderRequest{
@@ -923,8 +1055,10 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+
 	// Association of paths to correspondent handlers
 	mux.HandleFunc("/welcome", server.welcomeHandler)
+	mux.HandleFunc("/events", server.eventsHandler)
 	mux.HandleFunc("/catalog", server.catalogHandler)
 	mux.HandleFunc("/catalog/add", server.addToCatalogHandler)
 	mux.HandleFunc("/catalog/remove", server.removeFromCatalogHandler)
