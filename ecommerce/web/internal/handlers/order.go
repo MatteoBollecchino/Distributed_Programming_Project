@@ -46,9 +46,7 @@ func (s *ServerDependencies) OrderHandler(writer http.ResponseWriter, request *h
 		"TotalPrice": math.Trunc(totalPriceRes.GetTotalPrice()*100) / 100,
 	}
 
-	if !checkerr(writer, s.Templates.ExecuteTemplate(writer, "order.html", templateData)) {
-		return
-	}
+	checkerr(writer, s.Templates.ExecuteTemplate(writer, "order.html", templateData))
 }
 
 func (s *ServerDependencies) UserOrdersHandler(writer http.ResponseWriter, request *http.Request) {

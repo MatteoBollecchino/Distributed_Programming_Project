@@ -27,7 +27,9 @@ func (s *ServerDependencies) PaymentHandler(writer http.ResponseWriter, request 
 	username := session.Values["username"].(string)
 
 	// Retrieve cart to create the order
-	cartRes, err := s.Clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{Username: username})
+	cartRes, err := s.Clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{
+		Username: username,
+	})
 	if !checkerr(writer, err) {
 		return
 	}
@@ -63,6 +65,7 @@ func (s *ServerDependencies) PaymentHandler(writer http.ResponseWriter, request 
 		catalogItem := getRes.GetItem()
 		cartQuantity := cartItem.GetQuantity()
 		cartPrice := cartItem.GetPrice()
+
 		// Quantity of the item in the cart greater than the quantity in the catalog -> error
 		if cartQuantity > catalogItem.GetQuantityAvailable() || cartPrice != catalogItem.GetPrice() {
 
@@ -166,7 +169,8 @@ func (s *ServerDependencies) ProcessPaymentHandler(writer http.ResponseWriter, r
 	})
 	log.Printf("Processing order for: %s", username)
 
-	// Update catalog changing  the available quantity of acquired items
+	// Update catalog changing the available quantity of acquired items
+
 	// Retrieve cart
 	cartRes, err := s.Clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{Username: username})
 	if !checkerr(writer, err) {
@@ -174,7 +178,7 @@ func (s *ServerDependencies) ProcessPaymentHandler(writer http.ResponseWriter, r
 	}
 
 	for _, item := range cartRes.GetCart().GetItems() {
-		// Retrieve catalog item that was in cart
+		// Retrieve catalog item that was in the cart
 		catalogItemRes, err := s.Clients.Catalog.GetCatalogItem(request.Context(), &pbCatalog.GetCatalogItemRequest{
 			ItemId: item.GetItemId(),
 		})

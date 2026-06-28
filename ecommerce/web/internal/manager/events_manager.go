@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-// EventsManager manages synchronization with the browser
+// EventsManager manages synchronization between server and browser
 type EventsManager struct {
 	mu      sync.Mutex
 	clients map[chan struct{}]bool
@@ -36,7 +36,7 @@ func (em *EventsManager) HandleEvents(w http.ResponseWriter, r *http.Request) {
 	// Creation of the channel for a specific client
 	messageChan := make(chan struct{}, 1)
 
-	// Register the client
+	// Register the client in mutual exclusion
 	em.mu.Lock()
 	em.clients[messageChan] = true
 	em.mu.Unlock()
@@ -73,7 +73,7 @@ func (em *EventsManager) NotifyCatalogUpdate() {
 	for messageChan := range em.clients {
 		select {
 		case messageChan <- struct{}{}:
-		default: // Full channel
+		default: // The channel is full -> do nothing and skip to next client
 		}
 	}
 }

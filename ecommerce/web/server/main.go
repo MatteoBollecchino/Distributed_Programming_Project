@@ -9,27 +9,16 @@ import (
 
 	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/web/internal/clients"
 	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/web/internal/handlers"
-	manager "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/web/internal/manager"
+	"github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/web/internal/manager"
 	"github.com/gorilla/sessions"
 )
 
 var port = ":8080"
-var cookieKey = []byte("FantaEcommerce2026")
-
-const sessionName = "ecommerce-session"
+var authKey = []byte("FantaEcommerce2026SecureAuthKey1") // For authetication
+var encKey = []byte("FantaEcommerce2026EncryptionKey1")  // For encryption
 
 type WebServer struct {
 	dep *handlers.ServerDependencies
-}
-
-func checkerr(writer http.ResponseWriter, err error) bool {
-	ok := true
-	if err != nil {
-		ok = false
-		log.Printf("Error occured: %v", err.Error())
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-	}
-	return ok
 }
 
 func loadTemplates() *template.Template {
@@ -153,7 +142,16 @@ func main() {
 	eventsManager := manager.NewEventsManager()
 
 	// Cookies creation
-	cookieStore := sessions.NewCookieStore(cookieKey)
+	cookieStore := sessions.NewCookieStore(authKey, encKey)
+
+	// Cookies settings
+	cookieStore.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 7,
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	}
 
 	// Dependencies creation
 	dependecies := &handlers.ServerDependencies{

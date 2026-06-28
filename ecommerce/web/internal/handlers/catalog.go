@@ -10,7 +10,7 @@ import (
 )
 
 func (s *ServerDependencies) CatalogHandler(writer http.ResponseWriter, request *http.Request) {
-	// Request products from the catalog microservice via gRPC using s.clients
+	// Calling catalog service via gRPC
 	catalogRes, err := s.Clients.Catalog.ListCatalogItems(request.Context(), &pbCatalog.ListCatalogItemsRequest{})
 	if !checkerr(writer, err) {
 		return
@@ -22,21 +22,14 @@ func (s *ServerDependencies) CatalogHandler(writer http.ResponseWriter, request 
 		return
 	}
 
-	isLoggedIn := false
-	username := ""
-
-	// checking if user is logged or not
-	if loggedIn, ok := session.Values["logged_in"].(bool); ok && loggedIn {
-		isLoggedIn = true
-		username = session.Values["username"].(string)
-	}
+	// Retrieving if user is logged in or not
+	isLoggedIn, _ := session.Values["logged_in"].(bool)
 
 	// Map with data to send to HTML file
 	templateData := map[string]interface{}{
 		"Title":      "Fanta Catalog",
 		"Products":   catalogRes.GetItems(), // List all the products from gRPC
 		"IsLoggedIn": isLoggedIn,
-		"Username":   username,
 	}
 
 	checkerr(writer, s.Templates.ExecuteTemplate(writer, "catalog.html", templateData))
