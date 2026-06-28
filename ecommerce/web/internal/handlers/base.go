@@ -12,7 +12,7 @@ import (
 
 const sessionName = "ecommerce-session"
 
-// ServerDependencies all of what handlers need
+// ServerDependencies contains all of what handlers could need
 type ServerDependencies struct {
 	Templates *template.Template
 	Clients   *clients.ServiceClients
@@ -20,6 +20,7 @@ type ServerDependencies struct {
 	Manager   *manager.EventsManager
 }
 
+// checkerr in case of error logs and prints the error occured
 func checkerr(writer http.ResponseWriter, err error) bool {
 	ok := true
 	if err != nil {
@@ -30,6 +31,7 @@ func checkerr(writer http.ResponseWriter, err error) bool {
 	return ok
 }
 
+// checkIfUserIsLogged checks if the user is logged and returns correspondent session
 func checkIfUserIsLogged(s *ServerDependencies, request *http.Request, writer http.ResponseWriter) (*sessions.Session, bool) {
 	session, err := s.Store.Get(request, sessionName)
 	if !checkerr(writer, err) {

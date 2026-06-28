@@ -43,7 +43,7 @@ func (s *ServerDependencies) CatalogHandler(writer http.ResponseWriter, request 
 }
 
 func (s *ServerDependencies) UpdateCatalogHandler(writer http.ResponseWriter, request *http.Request) {
-	// User must be
+	// User must be logged
 	session, ok := checkIfUserIsLogged(s, request, writer)
 	if !ok {
 		return

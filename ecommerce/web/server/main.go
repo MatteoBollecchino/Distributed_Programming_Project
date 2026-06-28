@@ -19,11 +19,7 @@ var cookieKey = []byte("FantaEcommerce2026")
 const sessionName = "ecommerce-session"
 
 type WebServer struct {
-	templates *template.Template
-	clients   *clients.ServiceClients
-	store     *sessions.CookieStore
-	manager   *manager.EventsManager
-	dep       *handlers.ServerDependencies
+	dep *handlers.ServerDependencies
 }
 
 func checkerr(writer http.ResponseWriter, err error) bool {
@@ -47,22 +43,10 @@ func loadTemplates() *template.Template {
 	return template.Must(template.ParseGlob(templatesPath))
 }
 
-func checkIfUserIsLogged(s *WebServer, request *http.Request, writer http.ResponseWriter) (*sessions.Session, bool) {
-	session, err := s.store.Get(request, sessionName)
-	if !checkerr(writer, err) {
-		return nil, false
-	}
-	if loggedIn, ok := session.Values["logged_in"].(bool); !ok || !loggedIn {
-		http.Error(writer, "Unauthorized", http.StatusUnauthorized)
-		return nil, false
-	}
-	return session, true
-}
-
 // WELCOME PAGE HANDLER ///////////////////////////////////////////////////////////////
 
 func (s *WebServer) welcomeHandler(writer http.ResponseWriter, request *http.Request) {
-	checkerr(writer, s.templates.ExecuteTemplate(writer, "welcome_page.html", nil))
+	s.dep.WelcomeHandler(writer, request)
 }
 
 // CATALOG PAGE HANDLER ///////////////////////////////////////////////////////////////
@@ -181,18 +165,14 @@ func main() {
 
 	// Web server creation
 	server := &WebServer{
-		templates: loadTemplates(),
-		clients:   clientsRegistry,
-		store:     cookieStore,
-		manager:   eventsManager,
-		dep:       dependecies,
+		dep: dependecies,
 	}
 
 	mux := http.NewServeMux()
 
 	// Association of paths to correspondent handlers
 	mux.HandleFunc("/welcome", server.welcomeHandler)
-	mux.HandleFunc("/events", server.manager.HandleEvents)
+	mux.HandleFunc("/events", server.dep.Manager.HandleEvents)
 	mux.HandleFunc("/catalog", server.catalogHandler)
 	mux.HandleFunc("/catalog/add", server.addToCatalogHandler)
 	mux.HandleFunc("/catalog/remove", server.removeFromCatalogHandler)

@@ -1,12 +1,17 @@
 package handlers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 
 	pbAuth "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth"
 	pbOrder "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/order"
 )
+
+func (s *ServerDependencies) WelcomeHandler(writer http.ResponseWriter, request *http.Request) {
+	checkerr(writer, s.Templates.ExecuteTemplate(writer, "welcome_page.html", nil))
+}
 
 func (s *ServerDependencies) AccountHandler(writer http.ResponseWriter, request *http.Request) {
 	// Only GET requests are permitted
@@ -67,7 +72,6 @@ func (s *ServerDependencies) RegisterHandler(writer http.ResponseWriter, request
 
 		// Password validation
 		if password != confirmPassword {
-			// log.Printf("Failed registration for %s: passwords don't match", username)
 			checkerr(writer, s.Templates.ExecuteTemplate(writer, "register.html", "Passwords do not match"))
 			return
 		}
@@ -79,7 +83,6 @@ func (s *ServerDependencies) RegisterHandler(writer http.ResponseWriter, request
 		})
 
 		if err != nil {
-			// log.Printf("Failed Registration: %v", err)
 			checkerr(writer, s.Templates.ExecuteTemplate(writer, "register.html", "Username already exists or invalid data"))
 			return
 		}
@@ -215,8 +218,14 @@ func (s *ServerDependencies) ListAllUsersHandler(writer http.ResponseWriter, req
 	}
 
 	// User must be logged
-	_, ok := checkIfUserIsLogged(s, request, writer)
+	session, ok := checkIfUserIsLogged(s, request, writer)
 	if !ok {
+		return
+	}
+
+	// Check if user is an admin
+	if session.Values["role"] != "ADMIN" {
+		checkerr(writer, errors.New("User MUST be an admin to do this operation"))
 		return
 	}
 
