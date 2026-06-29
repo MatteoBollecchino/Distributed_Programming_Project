@@ -33,10 +33,7 @@ func (s *AuthServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Login
 	}
 
 	return &pb.LoginResponse{
-		User: &pb.User{
-			Username: user.Username,
-			Role:     user.Role,
-		},
+		User: user,
 	}, nil
 }
 
@@ -47,8 +44,7 @@ func (s *AuthServer) Register(ctx context.Context, req *pb.RegisterRequest) (*pb
 		return &pb.RegisterResponse{ErrorMessage: err.Error()}, err
 	}
 
-	err := s.repo.Register(req.Username, req.Password)
-	if err != nil {
+	if err := s.repo.Register(req.Username, req.Password); err != nil {
 		return &pb.RegisterResponse{ErrorMessage: err.Error()}, err
 	}
 	return &pb.RegisterResponse{}, nil
@@ -78,7 +74,7 @@ func (s *AuthServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.G
 	if err != nil {
 		return &pb.GetUserResponse{User: nil, ErrorMessage: err.Error()}, err
 	}
-	return &pb.GetUserResponse{User: &pb.User{Username: user.Username}}, nil
+	return &pb.GetUserResponse{User: user}, nil
 }
 
 // GetAllUsers retrieves all users registered in the system.

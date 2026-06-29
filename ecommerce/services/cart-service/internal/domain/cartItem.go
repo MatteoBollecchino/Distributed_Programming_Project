@@ -33,17 +33,3 @@ func DomainCartItemToProtoCartItem(cartItem *CartItem) (*pb.CartItem, error) {
 		Price:    cartItem.Price,
 	}, nil
 }
-
-/*
-// ProtoCartItemToDomainCartItem converts a pb.CartItem into a model.CartItem
-func ProtoCartItemToDomainCartItem(protoCartItem *pb.CartItem) (*CartItem, error) {
-	if protoCartItem == nil {
-		return nil, fmt.Errorf("Input argument is nil")
-	}
-
-	return &CartItem{
-		ItemID:   protoCartItem.ItemId,
-		Quantity: uint32(protoCartItem.Quantity),
-		Price:    protoCartItem.Price,
-	}, nil
-}*/

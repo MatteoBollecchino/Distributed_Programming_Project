@@ -17,8 +17,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("Failed to connect database: %v", err)
 	}
 
-	err = db.AutoMigrate(&domain.User{})
-	if err != nil {
+	if err = db.AutoMigrate(&domain.User{}); err != nil {
 		t.Fatalf("Failed to migrate database: %v", err)
 	}
 	return db
@@ -34,12 +33,11 @@ func setupDefaultUser(t *testing.T, db *gorm.DB, repo *repository.AuthRepository
 	}
 
 	user := domain.User{Username: username, Password: hashedPassword, Role: "USER"}
-	err = db.Create(&user).Error
-	if err != nil {
+	if err = db.Create(&user).Error; err != nil {
 		t.Fatalf("Failed to create default user: %v", err)
 	}
 
-	if err := db.Where("username = ? AND password = ?", username, hashedPassword).First(&user).Error; err != nil {
+	if err = db.Where("username = ? AND password = ?", username, hashedPassword).First(&user).Error; err != nil {
 		t.Fatalf("Failed to retrieve default user: %v", err)
 	}
 }
@@ -79,7 +77,7 @@ func TestLoginWithIncorrectPassword(t *testing.T) {
 	_, repo := setupTest(t)
 
 	username := "user1"
-	password := "Prongpassword7+"
+	password := "Prongpassword7+" // Incorrect password
 
 	// Now, attempt to login with incorrect credentials
 	_, err := repo.Login(username, password)
@@ -121,15 +119,13 @@ func TestRegisterNewUser(t *testing.T) {
 	password := "NewPassword1+"
 
 	// Attempt to register a new user
-	err := repo.Register(username, password)
-	if err != nil {
+	if err := repo.Register(username, password); err != nil {
 		t.Fatalf("Registration failed: %v", err)
 	}
 
 	// Verify the user was created
 	var user domain.User
-	err = db.Where("username = ?", username).First(&user).Error
-	if err != nil {
+	if err := db.Where("username = ?", username).First(&user).Error; err != nil {
 		t.Fatalf("Failed to retrieve registered user: %v", err)
 	}
 	if user.Username != username {
@@ -147,8 +143,7 @@ func TestRegisterDuplicateUsername(t *testing.T) {
 	password := "AnotherPassword1+"
 
 	// Attempt to register with a duplicate username
-	err := repo.Register(username, password)
-	if err == nil {
+	if err := repo.Register(username, password); err == nil {
 		t.Fatalf("Expected registration to fail with duplicate username")
 	}
 }
@@ -160,8 +155,7 @@ func TestRegisterInvalidPassword(t *testing.T) {
 	password := "short" // Invalid password
 
 	// Attempt to register with an invalid password
-	err := repo.Register(username, password)
-	if err == nil {
+	if err := repo.Register(username, password); err == nil {
 		t.Fatalf("Expected registration to fail with invalid password")
 	}
 }
@@ -173,8 +167,7 @@ func TestRegisterInvalidUsername(t *testing.T) {
 	password := "ValidPassword1+"
 
 	// Attempt to register with an invalid username
-	err := repo.Register(username, password)
-	if err == nil {
+	if err := repo.Register(username, password); err == nil {
 		t.Fatalf("Expected registration to fail with invalid username")
 	}
 }
@@ -186,8 +179,7 @@ func TestRegisterAndLoginFlow(t *testing.T) {
 	password := "FlowPassword1+"
 
 	// Register the user
-	err := repo.Register(username, password)
-	if err != nil {
+	if err := repo.Register(username, password); err != nil {
 		t.Fatalf("Registration failed: %v", err)
 	}
 
@@ -209,13 +201,12 @@ func TestChangePasswordSuccess(t *testing.T) {
 	newPassword := "NewPassword1+"
 
 	// Attempt to change password
-	err := repo.ChangePassword(username, oldPassword, newPassword)
-	if err != nil {
+	if err := repo.ChangePassword(username, oldPassword, newPassword); err != nil {
 		t.Fatalf("ChangePassword failed: %v", err)
 	}
 
 	// Verify that login with new password works
-	_, err = repo.Login(username, newPassword)
+	_, err := repo.Login(username, newPassword)
 	if err != nil {
 		t.Fatalf("Login with new password failed: %v", err)
 	}
@@ -270,8 +261,7 @@ func TestGetAllUsers(t *testing.T) {
 		}
 
 		user := domain.User{Username: u.Username, Password: password, Role: domain.UserRole}
-		err = db.Create(&user).Error
-		if err != nil {
+		if err = db.Create(&user).Error; err != nil {
 			t.Fatalf("Failed to create user %s: %v", u.Username, err)
 		}
 	}
@@ -303,7 +293,7 @@ func TestHashPassword(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HashPassword failed: %v", err)
 	}
-	if repo.CheckPassword(hashedPassword, password) != nil {
+	if err = repo.CheckPassword(hashedPassword, password); err != nil {
 		t.Fatalf("Hashed password does not match original password: %v", err)
 	}
 }
@@ -314,15 +304,13 @@ func TestCreateAdmin(t *testing.T) {
 	password := "AdminPassword1+"
 
 	// Attempt to create an admin user
-	err := repo.CreateAdmin(username, password)
-	if err != nil {
+	if err := repo.CreateAdmin(username, password); err != nil {
 		t.Fatalf("CreateAdmin failed: %v", err)
 	}
 
 	// Verify the admin user was created
 	var user domain.User
-	err = db.Where("username = ?", username).First(&user).Error
-	if err != nil {
+	if err := db.Where("username = ?", username).First(&user).Error; err != nil {
 		t.Fatalf("Failed to retrieve admin user: %v", err)
 	}
 	if user.Username != username {
@@ -336,8 +324,7 @@ func TestCreateAdmin(t *testing.T) {
 func TestCreateDefaultUsersAdmins(t *testing.T) {
 	db, repo := setupTest(t)
 
-	err := repo.CreateDefaultUsersAdmins()
-	if err != nil {
+	if err := repo.CreateDefaultUsersAdmins(); err != nil {
 		t.Fatalf("CreateDefaultUsersAdmins failed: %v", err)
 	}
 
@@ -353,15 +340,14 @@ func TestCreateDefaultUsersAdmins(t *testing.T) {
 	for _, dUser := range users {
 		// Verify the user was created
 		var user domain.User
-		err = db.Where("username = ?", dUser.Username).First(&user).Error
-		if err != nil {
+		if err = db.Where("username = ?", dUser.GetUsername()).First(&user).Error; err != nil {
 			t.Fatalf("Failed to retrieve registered user: %v", err)
 		}
-		if user.Username != dUser.Username {
+		if user.Username != dUser.GetUsername() {
 			t.Fatalf("Expected username %s, got %s", dUser.Username, user.Username)
 		}
-		if domain.Role(dUser.Role.String()) != user.Role {
-			t.Fatalf("Expected role %s, got %s", dUser.Role.String(), user.Role)
+		if domain.Role(dUser.GetRole().String()) != user.Role {
+			t.Fatalf("Expected role %s, got %s", dUser.GetRole().String(), user.Role)
 		}
 	}
 }

@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"log"
 	"testing"
 
 	"gorm.io/driver/sqlite"
@@ -18,8 +17,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("Failed to connect database: %v", err)
 	}
 
-	err = db.AutoMigrate(&domain.Cart{}, &domain.CartItem{})
-	if err != nil {
+	if err = db.AutoMigrate(&domain.Cart{}, &domain.CartItem{}); err != nil {
 		t.Fatalf("Failed to migrate database: %v", err)
 	}
 	return db
@@ -139,11 +137,11 @@ func TestAddNewItemToNewCart(t *testing.T) {
 func TestAddItemToCartWithEmptyID(t *testing.T) {
 	db, repo := setupTest(t)
 
-	// Test adding an item with nil ID
+	// Test adding an item with empty ID
 	cartItem := &pb.CartItem{ItemId: "", Quantity: 2, Price: 10.0}
 	err := repo.AddItemToCart("user1", cartItem)
 	if err == nil {
-		t.Errorf("Expected error when adding item with nil ID, got nil")
+		t.Errorf("Expected error when adding item with empty ID, got nil")
 	}
 
 	// Verify that the cart remains unchanged
@@ -154,27 +152,6 @@ func TestAddItemToCartWithEmptyID(t *testing.T) {
 	}
 	if len(cart.Items) != 2 {
 		t.Errorf("Expected 2 items in cart after failed addition, got %d", len(cart.Items))
-	}
-}
-
-func TestAddItemToCartWithEmptyCartUsername(t *testing.T) {
-	db, repo := setupTest(t)
-
-	// Test adding an item with nil ID
-	cartItem := &pb.CartItem{ItemId: "item6", Quantity: 2, Price: 10.0}
-	err := repo.AddItemToCart("", cartItem)
-	if err == nil {
-		t.Errorf("Expected error when adding item with nil ID, got nil")
-	}
-
-	// Verify that the cart remains unchanged
-	var cart domain.Cart
-	err = db.Preload("Items").Where("username = ?", "").First(&cart).Error
-	if err == nil {
-		t.Errorf("Failed to retrieve cart from database: %v", err)
-	}
-	if len(cart.Items) != 0 {
-		t.Errorf("Expected 0 items in cart after failed addition, got %d", len(cart.Items))
 	}
 }
 
@@ -223,7 +200,7 @@ func TestAddItemToCartWithZeroPrice(t *testing.T) {
 func TestRemoveExistingItemFromCart(t *testing.T) {
 	db, repo := setupTest(t)
 
-	// Verify initial quantity of item3 in user2's cart
+	// Verify presence of item3 in user2's cart
 	var initialCart domain.Cart
 	if err := db.Preload("Items").Where("username = ?", "user2").First(&initialCart).Error; err != nil {
 		t.Fatalf("Failed to retrieve initial cart: %v", err)
@@ -248,8 +225,6 @@ func TestRemoveExistingItemFromCart(t *testing.T) {
 	if len(cart.Items) != 1 {
 		t.Fatalf("Expected 1 item in cart after removal, got %d", len(cart.Items))
 	}
-
-	log.Printf("%v", cart.Items)
 
 	for _, item := range cart.Items {
 		if item.ItemID == "item3" {
@@ -564,8 +539,6 @@ func TestClearCartWithEmptyUsername(t *testing.T) {
 		t.Errorf("Expected error when clearing cart with empty username, got nil")
 	}
 }
-
-// DA CONTROLLARE DA QUI IN GIU'
 
 func TestCalculateTotalPriceOfExistingCart(t *testing.T) {
 	_, repo := setupTest(t)

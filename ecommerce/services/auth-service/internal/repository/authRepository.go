@@ -50,8 +50,7 @@ func (r *AuthRepository) Register(username, password string) error {
 		return err
 	}
 
-	err := uniqueUsername(r.db, username)
-	if err != nil {
+	if err := uniqueUsername(r.db, username); err != nil {
 		return err
 	}
 
@@ -257,7 +256,7 @@ func uniqueUsername(db *gorm.DB, username string) error {
 }
 
 // getUserByUserame retrieves a user by username from the database.
-// (will be differente from GetUser as it has *pb.User return type)
+// (will be different from GetUser as it has *pb.User return type)
 func (r *AuthRepository) getUserByUserame(username string) (*domain.User, error) {
 	var user domain.User
 	if err := r.db.Where("username = ?", username).First(&user).Error; err != nil {

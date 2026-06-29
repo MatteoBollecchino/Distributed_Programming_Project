@@ -119,8 +119,7 @@ func (r *CartServiceRepository) UpdateItemQuantity(username string, itemID strin
 	// Update the quantity of the item
 	cart.Items[itemIndex].Quantity = quantity
 
-	err = r.db.Session(&gorm.Session{FullSaveAssociations: true}).Save(cart).Error
-	if err != nil {
+	if err = r.db.Session(&gorm.Session{FullSaveAssociations: true}).Save(cart).Error; err != nil {
 		return err
 	}
 
@@ -165,8 +164,7 @@ func (r *CartServiceRepository) ClearCart(username string) error {
 	}
 
 	// Clear all items from the cart
-	err = r.db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&domain.CartItem{}).Error
-	if err != nil {
+	if err = r.db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&domain.CartItem{}).Error; err != nil {
 		return err
 	}
 
@@ -202,8 +200,7 @@ func (r *CartServiceRepository) RetrieveCart(username string) (bool, *domain.Car
 
 	var cart *domain.Cart
 
-	err := r.db.Preload("Items").Where("username = ?", username).First(&cart).Error
-	if err != nil {
+	if err := r.db.Preload("Items").Where("username = ?", username).First(&cart).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil, status.Errorf(codes.NotFound, "cart not found")
 		}
@@ -213,7 +210,7 @@ func (r *CartServiceRepository) RetrieveCart(username string) (bool, *domain.Car
 	return true, cart, nil
 }
 
-// findItemInCart searches for an item in the cart by its ID and returns its index and a pointer to the item
+// findItemInCart searches for an item in the cart by its ID and returns its index
 func findItemInCart(cartList []domain.CartItem, itemID string) int {
 
 	for i, cartItem := range cartList {

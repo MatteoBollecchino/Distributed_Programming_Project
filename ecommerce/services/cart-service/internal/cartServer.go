@@ -34,8 +34,7 @@ func (s *CartServer) AddItemToCart(ctx context.Context, req *pb.AddItemToCartReq
 		}, status.Error(codes.InvalidArgument, "Quantity must be greater than zero")
 	}
 
-	err := s.repo.AddItemToCart(req.Username, req.CartItem)
-	if err != nil {
+	if err := s.repo.AddItemToCart(req.Username, req.CartItem); err != nil {
 		return &pb.AddItemToCartResponse{ErrorMessage: err.Error()}, err
 	}
 	return &pb.AddItemToCartResponse{}, nil
@@ -72,8 +71,7 @@ func (s *CartServer) UpdateItemQuantity(ctx context.Context, req *pb.UpdateItemQ
 		}, status.Error(codes.InvalidArgument, "Quantity must be greater than zero")
 	}
 
-	err := s.repo.UpdateItemQuantity(req.Username, req.ItemId, req.Quantity)
-	if err != nil {
+	if err := s.repo.UpdateItemQuantity(req.Username, req.ItemId, req.Quantity); err != nil {
 		return &pb.UpdateItemQuantityResponse{ErrorMessage: err.Error()}, err
 	}
 	return &pb.UpdateItemQuantityResponse{}, nil
@@ -105,8 +103,7 @@ func (s *CartServer) ClearCart(ctx context.Context, req *pb.ClearCartRequest) (*
 		}, status.Error(codes.InvalidArgument, "Username must be provided and not empty")
 	}
 
-	err := s.repo.ClearCart(req.Username)
-	if err != nil {
+	if err := s.repo.ClearCart(req.Username); err != nil {
 		return &pb.ClearCartResponse{ErrorMessage: err.Error()}, err
 	}
 
