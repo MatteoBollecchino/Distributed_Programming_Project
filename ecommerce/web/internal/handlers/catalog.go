@@ -250,7 +250,7 @@ func (s *ServerDependencies) UpdateQuantityCatalogHandler(writer http.ResponseWr
 	// Notification that the catalog has changed
 	s.Manager.NotifyCatalogUpdate()
 
-	log.Printf("Item Price successfully updated by %s", username)
+	log.Printf("Item Quantity successfully updated by %s", username)
 
 	// Redirection to catalog page
 	http.Redirect(writer, request, "/catalog", http.StatusSeeOther)
