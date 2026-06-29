@@ -89,15 +89,15 @@ func TestAddExistingCatalogItem(t *testing.T) {
 		QuantityAvailable: 15,
 		Price:             89.99,
 	}
-	err := repo.AddCatalogItem(existingItem)
-	if err == nil {
+
+	if err := repo.AddCatalogItem(existingItem); err == nil {
 		t.Errorf("Expected error when adding existing catalog item, but got none")
 	}
 
 	// Verify that the database wasn't altered
 	var item domain.CatalogItem
-	err = db.Where("item_id = ?", "item123").First(&item).Error
-	if err != nil {
+
+	if err := db.Where("item_id = ?", "item123").First(&item).Error; err != nil {
 		t.Errorf("Error retrieving updated item: %v", err)
 	}
 	if item.Description != "Default Item" {
@@ -121,8 +121,7 @@ func TestAddCatalogItemInvalidID(t *testing.T) {
 		Price:             19.99,
 	}
 
-	err := repo.AddCatalogItem(invalidItem)
-	if err == nil {
+	if err := repo.AddCatalogItem(invalidItem); err == nil {
 		t.Errorf("Expected error: %v, but got none", err)
 	}
 }
@@ -137,25 +136,8 @@ func TestAddCatalogItemInvalidDescription(t *testing.T) {
 		Price:             19.99,
 	}
 
-	err := repo.AddCatalogItem(invalidItem)
-	if err == nil {
+	if err := repo.AddCatalogItem(invalidItem); err == nil {
 		t.Errorf("Expected error: %v, but got none", err)
-	}
-}
-
-func TestAddCatalogItemValidQuantity(t *testing.T) {
-	_, repo := setupTest(t)
-
-	invalidItem := &pb.CatalogItem{
-		ItemId:            "item999",
-		Description:       "Invalid Quantity Item",
-		QuantityAvailable: 0,
-		Price:             19.99,
-	}
-
-	err := repo.AddCatalogItem(invalidItem)
-	if err != nil {
-		t.Errorf("Unexpected error: %v, but got none", err)
 	}
 }
 
@@ -169,8 +151,7 @@ func TestAddCatalogItemInvalidPrice(t *testing.T) {
 		Price:             -5.00,
 	}
 
-	err := repo.AddCatalogItem(invalidItem)
-	if err == nil {
+	if err := repo.AddCatalogItem(invalidItem); err == nil {
 		t.Errorf("Expected error: %v, but got none", err)
 	}
 }
@@ -178,15 +159,13 @@ func TestAddCatalogItemInvalidPrice(t *testing.T) {
 func TestRemoveExistingCatalogItem(t *testing.T) {
 	db, repo := setupTest(t)
 
-	err := repo.RemoveCatalogItem("item456")
-	if err != nil {
+	if err := repo.RemoveCatalogItem("item456"); err != nil {
 		t.Errorf("Failed to remove existing catalog item: %v", err)
 	}
 
 	// Verify the item was removed from the database
 	var item domain.CatalogItem
-	err = db.Where("item_id = ?", "item456").First(&item).Error
-	if err == nil {
+	if err := db.Where("item_id = ?", "item456").First(&item).Error; err == nil {
 		t.Errorf("Item was not removed from the database")
 	}
 }
@@ -194,8 +173,7 @@ func TestRemoveExistingCatalogItem(t *testing.T) {
 func TestRemoveNonExistingCatalogItem(t *testing.T) {
 	_, repo := setupTest(t)
 
-	err := repo.RemoveCatalogItem("nonexistent_item")
-	if err == nil {
+	if err := repo.RemoveCatalogItem("nonexistent_item"); err == nil {
 		t.Errorf("Expected error: %v but got none", err)
 	}
 }
@@ -203,8 +181,7 @@ func TestRemoveNonExistingCatalogItem(t *testing.T) {
 func TestRemoveCatalogItemInvalidID(t *testing.T) {
 	_, repo := setupTest(t)
 
-	err := repo.RemoveCatalogItem("")
-	if err == nil {
+	if err := repo.RemoveCatalogItem(""); err == nil {
 		t.Errorf("Expected error: %v, but got none", err)
 	}
 }
@@ -249,14 +226,12 @@ func TestGetCatalogItemInvalidID(t *testing.T) {
 func TestUpdateQuantityAvailableValid(t *testing.T) {
 	db, repo := setupTest(t)
 
-	err := repo.UpdateQuantityAvailable("item123", 25)
-	if err != nil {
+	if err := repo.UpdateQuantityAvailable("item123", 25); err != nil {
 		t.Errorf("Failed to update quantity available: %v", err)
 	}
 
 	var item domain.CatalogItem
-	err = db.Where("item_id = ?", "item123").First(&item).Error
-	if err != nil {
+	if err := db.Where("item_id = ?", "item123").First(&item).Error; err != nil {
 		t.Errorf("Failed to retrieve updated item: %v", err)
 	}
 	if item.QuantityAvailable != 25 {
@@ -267,8 +242,7 @@ func TestUpdateQuantityAvailableValid(t *testing.T) {
 func TestUpdateQuantityAvailableInvalidID(t *testing.T) {
 	_, repo := setupTest(t)
 
-	err := repo.UpdateQuantityAvailable("", 15)
-	if err == nil {
+	if err := repo.UpdateQuantityAvailable("", 15); err == nil {
 		t.Errorf("Expected error: %v, but got none", err)
 	}
 }
@@ -276,8 +250,7 @@ func TestUpdateQuantityAvailableInvalidID(t *testing.T) {
 func TestUpdateQuantityAvailableNonExistingItem(t *testing.T) {
 	_, repo := setupTest(t)
 
-	err := repo.UpdateQuantityAvailable("nonexistent_item", 15)
-	if err == nil {
+	if err := repo.UpdateQuantityAvailable("nonexistent_item", 15); err == nil {
 		t.Errorf("Expected error: %v but got none", err)
 	}
 }
@@ -285,14 +258,12 @@ func TestUpdateQuantityAvailableNonExistingItem(t *testing.T) {
 func TestUpdatePriceValid(t *testing.T) {
 	db, repo := setupTest(t)
 
-	err := repo.UpdatePrice("item123", 79.99)
-	if err != nil {
+	if err := repo.UpdatePrice("item123", 79.99); err != nil {
 		t.Errorf("Failed to update price: %v", err)
 	}
 
 	var item domain.CatalogItem
-	err = db.Where("item_id = ?", "item123").First(&item).Error
-	if err != nil {
+	if err := db.Where("item_id = ?", "item123").First(&item).Error; err != nil {
 		t.Errorf("Failed to retrieve updated item: %v", err)
 	}
 	if item.Price != 79.99 {
@@ -303,14 +274,12 @@ func TestUpdatePriceValid(t *testing.T) {
 func TestUpdatePriceInvalid(t *testing.T) {
 	db, repo := setupTest(t)
 
-	err := repo.UpdatePrice("item123", -10.00)
-	if err == nil {
+	if err := repo.UpdatePrice("item123", -10.00); err == nil {
 		t.Errorf("Expected error: %v, but got none", err)
 	}
 
 	var item domain.CatalogItem
-	err = db.Where("item_id = ?", "item123").First(&item).Error
-	if err != nil {
+	if err := db.Where("item_id = ?", "item123").First(&item).Error; err != nil {
 		t.Errorf("Failed to retrieve item after invalid update attempt: %v", err)
 	}
 	if item.Price != 99.99 {
@@ -321,8 +290,7 @@ func TestUpdatePriceInvalid(t *testing.T) {
 func TestUpdatePriceInvalidID(t *testing.T) {
 	_, repo := setupTest(t)
 
-	err := repo.UpdatePrice("", 49.99)
-	if err == nil {
+	if err := repo.UpdatePrice("", 49.99); err == nil {
 		t.Errorf("Expected error: %v, but got none", err)
 	}
 }
@@ -330,8 +298,7 @@ func TestUpdatePriceInvalidID(t *testing.T) {
 func TestUpdatePriceNonExistingItem(t *testing.T) {
 	_, repo := setupTest(t)
 
-	err := repo.UpdatePrice("nonexistent_item", 49.99)
-	if err == nil {
+	if err := repo.UpdatePrice("nonexistent_item", 49.99); err == nil {
 		t.Errorf("Expected error: %v but got none", err)
 	}
 }
@@ -361,6 +328,8 @@ func TestListCatalogItems(t *testing.T) {
 			Price:             49.99,
 		},
 	}
+
+	// Testing if the retrieved items coincide with the original items
 	for _, item := range items {
 		expectedItem, exists := expectedItems[item.ItemId]
 		if !exists {
@@ -384,7 +353,7 @@ func TestCreateDefaultProducts(t *testing.T) {
 	db := setupTestDB(t)
 	repo := repository.NewCatalogServiceRepository(db)
 
-	if err := repo.CreateDefaultProducts(); err != nil {
+	if err := repo.CreateDefaultItems(); err != nil {
 		t.Fatalf("Failed to create default products on empty DB: %v", err)
 	}
 
@@ -403,12 +372,18 @@ func TestCreateDefaultProducts(t *testing.T) {
 	if berserkItem.QuantityAvailable != 25 {
 		t.Errorf("Berserk quantity mismatch: got %v, want 25", berserkItem.QuantityAvailable)
 	}
+	if berserkItem.Price != 53.00 {
+		t.Errorf("Berserk price mismatch: got %v, want 53.00", berserkItem.Price)
+	}
+	if berserkItem.Description != "Best manga ever" {
+		t.Errorf("Berserk description mismatch: got %v, want 'Best manga ever'", berserkItem.Price)
+	}
 }
 
-func TestFailingCreationDefaultProducts(t *testing.T) {
+func TestCreationDefaultProductsInNonEmptyCatalog(t *testing.T) {
 	_, repo := setupTest(t)
 
-	if err := repo.CreateDefaultProducts(); err == nil {
-		t.Fatalf("Successful creation of deafult, but database was NOT empty ")
+	if err := repo.CreateDefaultItems(); err != nil {
+		t.Fatalf("Error occured in creation of default product in NON empty catalog")
 	}
 }

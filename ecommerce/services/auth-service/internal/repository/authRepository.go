@@ -177,6 +177,13 @@ func (r *AuthRepository) CreateDefaultUsersAdmins() error {
 		{Username: "adminDani", Password: "AdminPassword2+"},
 	}
 
+	var count int64
+	r.db.Model(&domain.User{}).Count(&count)
+	if count != 0 {
+		// Default users already created -> skip and use the existing users
+		return nil
+	}
+
 	for _, du := range defaultUsers {
 		if err := r.Register(du.Username, du.Password); err != nil {
 			return err

@@ -170,15 +170,15 @@ func (r *CatalogServiceRepository) ListCatalogItems() ([]*pb.CatalogItem, error)
 // RetrieveCatalogItem retrieves a catalog item by its unique identifier.
 func (r *CatalogServiceRepository) RetrieveCatalogItem(itemID string) (*domain.CatalogItem, error) {
 	var item domain.CatalogItem
-	err := r.db.First(&item, "item_id = ?", itemID).Error
-	if err != nil {
+
+	if err := r.db.First(&item, "item_id = ?", itemID).Error; err != nil {
 		return nil, err
 	}
 	return &item, nil
 }
 
-// CreateDefaultProducts creates inital default catalog
-func (r *CatalogServiceRepository) CreateDefaultProducts() error {
+// CreateDefaultItems creates inital default catalog
+func (r *CatalogServiceRepository) CreateDefaultItems() error {
 	var count int64
 
 	// Counting how many products are in the database
@@ -188,14 +188,14 @@ func (r *CatalogServiceRepository) CreateDefaultProducts() error {
 
 	// If database is empty, insert default items in the catalog
 	if count == 0 {
-		defaultProducts := []domain.CatalogItem{
+		defaultItems := []domain.CatalogItem{
 			{ItemID: "The Lord of the Rings", Description: "A fantastic fantasy book", Price: 30.00, QuantityAvailable: 10},
 			{ItemID: "Berserk Deluxe Edition Vol.1", Description: "Best manga ever", Price: 53.00, QuantityAvailable: 25},
 			{ItemID: "Warhammer 40k, Ultramarines Titus Action Figure", Description: "Very nice figure", Price: 66.09, QuantityAvailable: 15},
 			{ItemID: "20th Century Boys Ultimate Deluxe Edition Vol.1-12", Description: "Most famous Urasawa's collection", Price: 163.90, QuantityAvailable: 20},
 		}
 
-		for _, p := range defaultProducts {
+		for _, p := range defaultItems {
 			protoCatalogItem, err := domain.DomainCatalogItemToProtoCatalogItem(&p)
 			if err != nil {
 				return err
@@ -205,10 +205,9 @@ func (r *CatalogServiceRepository) CreateDefaultProducts() error {
 			}
 		}
 		log.Println("Default Catalog Products created.")
-	} else {
-		return errors.New("Failed creation of default items, database was NOT empty")
 	}
 
+	// NON-Empty catalog -> skip and use the existing catalog
 	return nil
 }
 
@@ -221,10 +220,13 @@ func checkItemIDValidity(itemID string) error {
 	return nil
 }
 
+// checkItemIDUniqueness is used in the addiction of an item to the catalog
 func checkItemIDUniqueness(itemID string, db *gorm.DB) error {
 
 	var count int64
 	db.Model(&domain.CatalogItem{}).Where("item_id = ?", itemID).Count(&count)
+
+	// count > 0 -> items already exists in the catalog
 	if count > 0 {
 		return errors.New("Item ID must be unique")
 	}

@@ -19,7 +19,7 @@ var port = "8083"
 func main() {
 
 	// Initialize database connection with GORM
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("catalog.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect database: %v", err)
 	}
@@ -35,10 +35,10 @@ func main() {
 		log.Fatalf("Failed to listen on port %s: %v", port, err)
 	}
 
-	// Initialize repository and create default users/admins
+	// Initialize repository and create default catalog items
 	catalogRepo := repository.NewCatalogServiceRepository(db)
-	if err := catalogRepo.CreateDefaultProducts(); err != nil {
-		log.Fatalf("Internal errors while creating default users: %v", err)
+	if err := catalogRepo.CreateDefaultItems(); err != nil {
+		log.Fatalf("Internal errors while creating default items: %v", err)
 	}
 
 	// Initialize CatalogServer

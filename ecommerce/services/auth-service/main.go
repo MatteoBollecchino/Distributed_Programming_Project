@@ -19,7 +19,7 @@ var port = "8081"
 func main() {
 
 	// Initialize database connection with GORM
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("auth.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect database: %v", err)
 	}

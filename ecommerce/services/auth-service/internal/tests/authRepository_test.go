@@ -322,7 +322,8 @@ func TestCreateAdmin(t *testing.T) {
 }
 
 func TestCreateDefaultUsersAdmins(t *testing.T) {
-	db, repo := setupTest(t)
+	db := setupTestDB(t)
+	repo := repository.NewAuthRepository(db)
 
 	if err := repo.CreateDefaultUsersAdmins(); err != nil {
 		t.Fatalf("CreateDefaultUsersAdmins failed: %v", err)
@@ -333,8 +334,8 @@ func TestCreateDefaultUsersAdmins(t *testing.T) {
 		t.Fatalf("GetAllUsers failed: %v", err)
 	}
 
-	if len(users) != 5 { // 3 default users + 2 default admins
-		t.Fatalf("Expected 5 users, got %d", len(users))
+	if len(users) != 4 { // 2 default users + 2 default admins
+		t.Fatalf("Expected 4 users, got %d", len(users))
 	}
 
 	for _, dUser := range users {

@@ -6,10 +6,12 @@ OS := $(shell go env GOOS)
 ifeq ($(OS),windows)
     RM = powershell -Command "Remove-Item -Recurse -Force -ErrorAction SilentlyContinue"
     FIND_PROTO = powershell -Command "Get-ChildItem proto -Recurse -Include *.pb.go,*_grpc.pb.go | Remove-Item -Force"
+	FIND_DB = powershell -Command "Get-ChildItem . -Recurse -Filter *.db | Remove-Item -Force"
     EXE = .exe
 else
     RM = rm -f
     FIND_PROTO = find proto -type f \( -name "*.pb.go" -o -name "*_grpc.pb.go" \) -delete
+	FIND_DB = find . -type f -name "*.db" -delete
     EXE =
 endif
 
@@ -25,7 +27,7 @@ GO=go
 # ==========================
 # DEFAULT
 # ==========================
-.PHONY: all proto build clean clean-proto test stop-all run-all run-all-tabs
+.PHONY: all proto build clean clean-proto test stop-all run-all run-all-tabs clean-db
 all: proto build
 
 # ==========================
@@ -148,6 +150,14 @@ clean-proto:
 	@echo "Removing generated protobuf files..."
 	@$(FIND_PROTO)
 	@echo "Protobuf files removed"
+
+# ==========================
+# CLEAN SERVICE DATABASE
+# ==========================
+clean-db:
+	@echo "Searching all SQLite databases..."
+	@$(FIND_DB)
+	@echo "SQLite databases removed"
 
 # ==========================
 # BUILD
