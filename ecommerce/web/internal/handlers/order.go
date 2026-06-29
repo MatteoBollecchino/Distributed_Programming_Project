@@ -102,7 +102,7 @@ func (s *ServerDependencies) UserOrdersHandler(writer http.ResponseWriter, reque
 			return
 		}
 
-		log.Printf("Status order successfullt updated")
+		log.Printf("Status order successfully updated")
 
 		http.Redirect(writer, request, "/list/users", http.StatusSeeOther)
 	}
