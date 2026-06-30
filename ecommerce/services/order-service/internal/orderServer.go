@@ -75,8 +75,7 @@ func (s *OrderServer) UpdateOrderStatus(ctx context.Context, req *pb.UpdateOrder
 		}, status.Error(codes.InvalidArgument, "Order ID must be provided and not empty")
 	}
 
-	err := s.repo.UpdateOrderStatus(req.OrderId, req.Status)
-	if err != nil {
+	if err := s.repo.UpdateOrderStatus(req.OrderId, req.Status); err != nil {
 		return &pb.UpdateOrderStatusResponse{ErrorMessage: err.Error()}, err
 	}
 	return &pb.UpdateOrderStatusResponse{}, nil
@@ -100,6 +99,7 @@ func (s *OrderServer) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*p
 
 // GetOrderPrice retrieves the total price of an order by its unique identifier.
 func (s *OrderServer) GetOrderPrice(ctx context.Context, req *pb.GetOrderPriceRequest) (*pb.GetOrderPriceResponse, error) {
+
 	if req.OrderId == "" {
 		return &pb.GetOrderPriceResponse{
 			ErrorMessage: "Order ID must be provided and not empty",
@@ -115,6 +115,7 @@ func (s *OrderServer) GetOrderPrice(ctx context.Context, req *pb.GetOrderPriceRe
 
 // ListOrdersByUser retrieves all orders associated with a specific user.
 func (s *OrderServer) ListOrdersByUser(ctx context.Context, req *pb.ListOrdersByUserRequest) (*pb.ListOrdersByUserResponse, error) {
+
 	if req.UserId == "" {
 		return &pb.ListOrdersByUserResponse{
 			ErrorMessage: "User ID must be provided and not empty",

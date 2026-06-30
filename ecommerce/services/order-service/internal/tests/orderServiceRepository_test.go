@@ -248,8 +248,7 @@ func TestUpdateOrderStatusValid(t *testing.T) {
 	}
 
 	// Update order status
-	err = repo.UpdateOrderStatus(order.OrderId, pb.OrderStatus_SHIPPED)
-	if err != nil {
+	if err = repo.UpdateOrderStatus(order.OrderId, pb.OrderStatus_SHIPPED); err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 

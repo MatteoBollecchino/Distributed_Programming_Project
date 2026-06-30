@@ -35,8 +35,7 @@ func (s *PaymentServer) CreatePayment(ctx context.Context, req *pb.CreatePayment
 		}, status.Error(codes.InvalidArgument, "Amount cannot be negative")
 	}
 
-	err := s.repo.CreatePayment(req.OrderId, req.Amount)
-	if err != nil {
+	if err := s.repo.CreatePayment(req.OrderId, req.Amount); err != nil {
 		return &pb.CreatePaymentResponse{ErrorMessage: err.Error()}, err
 	}
 	return &pb.CreatePaymentResponse{}, nil
@@ -57,8 +56,7 @@ func (s *PaymentServer) ProcessPayment(ctx context.Context, req *pb.ProcessPayme
 		}, status.Error(codes.InvalidArgument, "Amount cannot be negative")
 	}
 
-	err := s.repo.ProcessPayment(req.OrderId, req.Amount)
-	if err != nil {
+	if err := s.repo.ProcessPayment(req.OrderId, req.Amount); err != nil {
 		return &pb.ProcessPaymentResponse{ErrorMessage: err.Error()}, err
 	}
 	return &pb.ProcessPaymentResponse{}, nil

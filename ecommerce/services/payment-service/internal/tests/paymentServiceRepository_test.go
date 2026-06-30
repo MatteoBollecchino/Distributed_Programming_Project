@@ -17,8 +17,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("Failed to connect database: %v", err)
 	}
 
-	err = db.AutoMigrate(&domain.Payment{})
-	if err != nil {
+	if err = db.AutoMigrate(&domain.Payment{}); err != nil {
 		t.Fatalf("Failed to migrate database: %v", err)
 	}
 	return db
@@ -66,8 +65,7 @@ func setupTest(t *testing.T) (*gorm.DB, *repository.PaymentServiceRepository) {
 func TestCreateNewPayment(t *testing.T) {
 	db, repo := setupTest(t)
 
-	err := repo.CreatePayment("order999", 59.99)
-	if err != nil {
+	if err := repo.CreatePayment("order999", 59.99); err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
@@ -83,8 +81,7 @@ func TestCreateNewPayment(t *testing.T) {
 func TestCreatePaymentAlreadyExists(t *testing.T) {
 	db, repo := setupTest(t)
 
-	err := repo.CreatePayment("order123", 199.99)
-	if err == nil {
+	if err := repo.CreatePayment("order123", 199.99); err == nil {
 		t.Fatalf("Expected error for existing payment, got nil")
 	}
 
@@ -100,8 +97,7 @@ func TestCreatePaymentAlreadyExists(t *testing.T) {
 func TestCreatePaymentInvalidAmount(t *testing.T) {
 	db, repo := setupTest(t)
 
-	err := repo.CreatePayment("order456", -10.00)
-	if err == nil {
+	if err := repo.CreatePayment("order456", -10.00); err == nil {
 		t.Fatalf("Expected error for negative amount, got nil")
 	}
 
@@ -117,8 +113,7 @@ func TestCreatePaymentInvalidAmount(t *testing.T) {
 func TestProcessPayment(t *testing.T) {
 	db, repo := setupTest(t)
 
-	err := repo.ProcessPayment("order123", 199.99)
-	if err != nil {
+	if err := repo.ProcessPayment("order123", 199.99); err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
@@ -134,8 +129,7 @@ func TestProcessPayment(t *testing.T) {
 func TestProcessPaymentInvalidID(t *testing.T) {
 	_, repo := setupTest(t)
 
-	err := repo.ProcessPayment("", 50.00)
-	if err == nil {
+	if err := repo.ProcessPayment("", 50.00); err == nil {
 		t.Fatalf("Expected error for invalid order ID, got nil")
 	}
 }
@@ -143,8 +137,7 @@ func TestProcessPaymentInvalidID(t *testing.T) {
 func TestProcessPaymentNegativeAmount(t *testing.T) {
 	_, repo := setupTest(t)
 
-	err := repo.ProcessPayment("order123", -20.00)
-	if err == nil {
+	if err := repo.ProcessPayment("order123", -20.00); err == nil {
 		t.Fatalf("Expected error for negative amount, got nil")
 	}
 }
@@ -152,8 +145,7 @@ func TestProcessPaymentNegativeAmount(t *testing.T) {
 func TestProcessPaymentInsufficientAmount(t *testing.T) {
 	db, repo := setupTest(t)
 
-	err := repo.ProcessPayment("order123", 100.00)
-	if err != nil {
+	if err := repo.ProcessPayment("order123", 100.00); err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
@@ -169,8 +161,7 @@ func TestProcessPaymentInsufficientAmount(t *testing.T) {
 func TestProcessPaymentAlreadyPaid(t *testing.T) {
 	db, repo := setupTest(t)
 
-	err := repo.ProcessPayment("order456", 49.99)
-	if err == nil {
+	if err := repo.ProcessPayment("order456", 49.99); err == nil {
 		t.Fatalf("Expected error for already PAID payment, got nil")
 	}
 
@@ -183,11 +174,10 @@ func TestProcessPaymentAlreadyPaid(t *testing.T) {
 	}
 }
 
-func TestProcessPaymentFailed(t *testing.T) {
+func TestProcessFailedPayment(t *testing.T) {
 	db, repo := setupTest(t)
 
-	err := repo.ProcessPayment("order789", 40.00)
-	if err != nil {
+	if err := repo.ProcessPayment("order789", 40.00); err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 

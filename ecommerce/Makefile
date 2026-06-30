@@ -123,18 +123,6 @@ test:
 	@echo "Tests completed"
 
 # ==========================
-# CLEAN
-# ==========================
-clean:
-	@echo "Cleaning binaries..."
-	$(RM) $(SERVICES_DIR)/auth-service/auth-service$(EXE)
-	$(RM) $(SERVICES_DIR)/cart-service/cart-service$(EXE)
-	$(RM) $(SERVICES_DIR)/catalog-service/catalog-service$(EXE)
-	$(RM) $(SERVICES_DIR)/order-service/order-service$(EXE)
-	$(RM) $(SERVICES_DIR)/payment-service/payment-service$(EXE)
-	@echo "Binaries removed"
-
-# ==========================
 # PROTOBUF
 # ==========================
 proto:
@@ -170,3 +158,15 @@ build:
 	cd $(SERVICES_DIR)/order-service && $(GO) build -o order-service
 	cd $(SERVICES_DIR)/payment-service && $(GO) build -o payment-service
 	@echo "Build completed"
+
+# ==========================
+# CLEAN
+# ==========================
+clean:
+	@echo "Cleaning binaries..."
+	$(RM) $(SERVICES_DIR)/auth-service/auth-service$(EXE)
+	$(RM) $(SERVICES_DIR)/cart-service/cart-service$(EXE)
+	$(RM) $(SERVICES_DIR)/catalog-service/catalog-service$(EXE)
+	$(RM) $(SERVICES_DIR)/order-service/order-service$(EXE)
+	$(RM) $(SERVICES_DIR)/payment-service/payment-service$(EXE)
+	@echo "Binaries removed"

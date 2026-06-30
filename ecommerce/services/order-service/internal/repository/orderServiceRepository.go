@@ -179,6 +179,8 @@ func checkValidID(id string) error {
 func checkOrderUniqueness(db *gorm.DB, orderID string) error {
 	var count int64
 	db.Model(&domain.Order{}).Where("order_id = ?", orderID).Count(&count)
+
+	// count > 0 -> order already exists
 	if count > 0 {
 		return errors.New("Order ID already exists")
 	}
