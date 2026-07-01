@@ -54,6 +54,9 @@ func (s *ServerDependencies) CartHandler(writer http.ResponseWriter, request *ht
 	if queryError == "catalog_changed" {
 		errorMessage = "Catalog has been updated. Items could have been changed or removed."
 	}
+	if queryError == "payment_failed" {
+		errorMessage = "Failed payment: the amount provided was insufficient"
+	}
 
 	// Mapping data for HTML file
 	templateData := map[string]interface{}{

@@ -165,6 +165,7 @@ func (s *ServerDependencies) ProcessPaymentHandler(writer http.ResponseWriter, r
 		OrderId: orderId,
 	})
 	if !checkerr(writer, err) || statusRes.GetStatus() != pbPayment.PaymentStatus_PAID {
+		http.Redirect(writer, request, "/cart?error=payment_failed", http.StatusSeeOther)
 		return
 	}
 
