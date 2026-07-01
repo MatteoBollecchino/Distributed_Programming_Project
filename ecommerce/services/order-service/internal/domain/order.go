@@ -46,10 +46,20 @@ func DomainOrderToProtoOrder(order *Order) (*pb.Order, error) {
 		return nil, fmt.Errorf("Input argument is nil")
 	}
 
+	var pbItems []*pb.OrderItem
+
+	for _, item := range order.Items {
+		pbItems = append(pbItems, &pb.OrderItem{
+			ItemId:   item.ItemID,
+			Quantity: item.Quantity,
+			Price:    item.Price,
+		})
+	}
+
 	return &pb.Order{
 		OrderId: order.OrderID,
 		UserId:  order.UserID,
-		Items:   []*pb.OrderItem{},
+		Items:   pbItems,
 		Status:  pb.OrderStatus(pb.OrderStatus_value[string(order.Status)]),
 	}, nil
 }

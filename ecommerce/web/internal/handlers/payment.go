@@ -160,6 +160,14 @@ func (s *ServerDependencies) ProcessPaymentHandler(writer http.ResponseWriter, r
 		return
 	}
 
+	// Verify payment status
+	statusRes, err := s.Clients.Payment.GetPaymentStatus(request.Context(), &pbPayment.GetPaymentStatusRequest{
+		OrderId: orderId,
+	})
+	if !checkerr(writer, err) || statusRes.GetStatus() != pbPayment.PaymentStatus_PAID {
+		return
+	}
+
 	log.Printf("Successfull payment for: %s", username)
 
 	// Update Order Status
@@ -171,13 +179,13 @@ func (s *ServerDependencies) ProcessPaymentHandler(writer http.ResponseWriter, r
 
 	// Update catalog changing the available quantity of acquired items
 
-	// Retrieve cart
-	cartRes, err := s.Clients.Cart.GetCart(request.Context(), &pbCart.GetCartRequest{Username: username})
+	// Retrieve order
+	orderRes, err := s.Clients.Order.GetOrder(request.Context(), &pbOrder.GetOrderRequest{OrderId: orderId})
 	if !checkerr(writer, err) {
 		return
 	}
 
-	for _, item := range cartRes.GetCart().GetItems() {
+	for _, item := range orderRes.GetOrder().GetItems() {
 		// Retrieve catalog item that was in the cart
 		catalogItemRes, err := s.Clients.Catalog.GetCatalogItem(request.Context(), &pbCatalog.GetCatalogItemRequest{
 			ItemId: item.GetItemId(),

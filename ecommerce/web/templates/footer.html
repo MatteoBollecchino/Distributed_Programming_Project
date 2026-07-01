@@ -18,7 +18,7 @@
 
 <script>
     // Background connection to Go server
-    const eventSource = new EventSource('http://localhost:8080/events');
+    const eventSource = new EventSource('/events');
 
     // When "reload" message from server arrives, then refresh page
     eventSource.onmessage = function(event) {

@@ -12,7 +12,7 @@ type CartItem struct {
 	ItemID string `gorm:"primaryKey; not null; check:item_id <> ''"`
 
 	// CartUsername is the username of the cart owner.
-	CartUsername string `gorm:"not null; check:cart_username <> ''"`
+	CartUsername string `gorm:"primaryKey; not null; check:cart_username <> ''"`
 
 	// Quantity indicates how many of the item are in the cart.
 	Quantity uint32 `gorm:"not null; check:quantity > 0"`

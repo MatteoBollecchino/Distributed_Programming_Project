@@ -164,7 +164,7 @@ func (r *CartServiceRepository) ClearCart(username string) error {
 	}
 
 	// Clear all items from the cart
-	if err = r.db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&domain.CartItem{}).Error; err != nil {
+	if err = r.db.Where("cart_username = ?", username).Delete(&domain.CartItem{}).Error; err != nil {
 		return err
 	}
 
