@@ -5,7 +5,8 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
-	"gorm.io/driver/sqlite"
+	//"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 
 	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/auth"
