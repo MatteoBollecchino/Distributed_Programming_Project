@@ -25,21 +25,12 @@ GO=go
 # ==========================
 # DEFAULT
 # ==========================
-.PHONY: all proto build clean clean-proto test stop-all run-all run-all-tabs clean-db
+.PHONY: all proto build clean clean-proto test stop-all run-all-tabs clean-db
 all: proto build
 
 # ==========================
 # RUN ALL SERVICES
 # ==========================
-run-all:
-	@echo "Starting all services in background..."
-	cd $(SERVICES_DIR)/auth-service && go run main.go &
-	cd $(SERVICES_DIR)/cart-service && go run main.go &
-	cd $(SERVICES_DIR)/catalog-service && go run main.go &
-	cd $(SERVICES_DIR)/order-service && go run main.go &
-	cd $(SERVICES_DIR)/payment-service && go run main.go &
-	@echo "All services are running."
-
 run-all-tabs:
 	@echo "Starting services in different tabs..."
 ifeq ($(OS),windows)
