@@ -7,12 +7,10 @@ ifeq ($(OS),windows)
     RM = powershell -Command "Remove-Item -Recurse -Force -ErrorAction SilentlyContinue"
     FIND_PROTO = powershell -Command "Get-ChildItem proto -Recurse -Include *.pb.go,*_grpc.pb.go | Remove-Item -Force"
 	FIND_DB = powershell -Command "Get-ChildItem . -Recurse -Filter *.db | Remove-Item -Force"
-    EXE = .exe
 else
     RM = rm -f
     FIND_PROTO = find proto -type f \( -name "*.pb.go" -o -name "*_grpc.pb.go" \) -delete
 	FIND_DB = find . -type f -name "*.db" -delete
-    EXE =
 endif
 
 # ==========================
@@ -164,9 +162,9 @@ build:
 # ==========================
 clean:
 	@echo "Cleaning binaries..."
-	$(RM) $(SERVICES_DIR)/auth-service/auth-service$(EXE)
-	$(RM) $(SERVICES_DIR)/cart-service/cart-service$(EXE)
-	$(RM) $(SERVICES_DIR)/catalog-service/catalog-service$(EXE)
-	$(RM) $(SERVICES_DIR)/order-service/order-service$(EXE)
-	$(RM) $(SERVICES_DIR)/payment-service/payment-service$(EXE)
+	$(RM) $(SERVICES_DIR)/auth-service/auth-service
+	$(RM) $(SERVICES_DIR)/cart-service/cart-service
+	$(RM) $(SERVICES_DIR)/catalog-service/catalog-service
+	$(RM) $(SERVICES_DIR)/order-service/order-service
+	$(RM) $(SERVICES_DIR)/payment-service/payment-service
 	@echo "Binaries removed"
