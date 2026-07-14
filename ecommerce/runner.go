@@ -12,7 +12,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"runtime" // <-- Cambiato: usiamo runtime per rilevare l'OS
+	"runtime" // we use runtime to detect the OS
 	"sync"
 	"syscall"
 )
@@ -39,57 +39,57 @@ func main() {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-sigChan
-		fmt.Println("\n[ORCHESTRATORE] Spegnimento di tutti i servizi in corso...")
+		fmt.Println("\n[ORCHESTRATOR] Shutting down all services...")
 		cancel()
 	}()
 
 	var wg sync.WaitGroup
 
-	fmt.Println("[ORCHESTRATORE] Avvio della compilazione e dei servizi...")
+	fmt.Println("[ORCHESTRATOR] Starting compilation and services...")
 	for _, svc := range services {
 		wg.Add(1)
 		go func(s Service) {
 			defer wg.Done()
 			if err := runService(ctx, s); err != nil {
-				log.Printf("[%s] Errore: %v", s.Name, err)
+				log.Printf("[%s] Error: %v", s.Name, err)
 			}
 		}(svc)
 	}
 
 	wg.Wait()
-	fmt.Println("[ORCHESTRATORE] Tutti i servizi sono stati arrestati.")
+	fmt.Println("[ORCHESTRATOR] All services have been stopped.")
 }
 
 func runService(ctx context.Context, svc Service) error {
-	// 1. Determina il nome del binario in base all'OS
+	// 1. Determine the binary name based on the OS
 	binaryName := filepath.Base(svc.Dir)
-	if runtime.GOOS == "windows" { // <-- Corretto con runtime.GOOS
+	if runtime.GOOS == "windows" { // Corrected with runtime.GOOS
 		binaryName += ".exe"
 	}
 
-	// 2. Ottieni il percorso ASSOLUTO del binario per evitare bug di pathing
+	// 2. Get the ABSOLUTE path of the binary to avoid pathing bugs
 	absBinaryPath, err := filepath.Abs(filepath.Join(svc.Dir, binaryName))
 	if err != nil {
-		return fmt.Errorf("impossibile determinare il percorso assoluto: %w", err)
+		return fmt.Errorf("unable to determine the absolute path: %w", err)
 	}
 
-	// 3. Compilazione del servizio all'interno della sua cartella
-	fmt.Printf("[%s] Compilazione in corso...\n", svc.Name)
+	// 3. Service compilation inside its directory
+	fmt.Printf("[%s] Compiling...\n", svc.Name)
 	buildCmd := exec.Command("go", "build", "-o", binaryName)
 	buildCmd.Dir = svc.Dir
 	if err := buildCmd.Run(); err != nil {
-		return fmt.Errorf("errore di compilazione: %w", err)
+		return fmt.Errorf("compilation error: %w", err)
 	}
 
-	// 4. Esecuzione del binario usando il percorso assoluto
+	// 4. Execution of the binary using the absolute path
 	cmd := exec.CommandContext(ctx, absBinaryPath)
-	cmd.Dir = svc.Dir // Mantiene la cartella di lavoro corretta per i database SQLite relativi
+	cmd.Dir = svc.Dir // Maintains the correct working directory for relative SQLite databases
 
 	stdout, _ := cmd.StdoutPipe()
 	stderr, _ := cmd.StderrPipe()
 
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("impossibile avviare il binario: %w", err)
+		return fmt.Errorf("unable to start binary: %w", err)
 	}
 
 	go streamLogs(svc.Name, stdout)
@@ -97,7 +97,7 @@ func runService(ctx context.Context, svc Service) error {
 
 	<-ctx.Done()
 
-	// Pulizia facoltativa dei binari generati alla chiusura
+	// Optional cleanup of generated binaries upon closure
 	defer os.Remove(absBinaryPath)
 
 	return cmd.Wait()
