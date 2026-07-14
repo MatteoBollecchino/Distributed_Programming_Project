@@ -4,9 +4,8 @@ import (
 	"log"
 	"net"
 
-	"google.golang.org/grpc"
-	//"gorm.io/driver/sqlite"
 	"github.com/glebarez/sqlite"
+	"google.golang.org/grpc"
 	"gorm.io/gorm"
 
 	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/catalog"
