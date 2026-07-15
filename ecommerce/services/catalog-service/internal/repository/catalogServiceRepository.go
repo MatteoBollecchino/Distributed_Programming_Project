@@ -36,11 +36,6 @@ func (r *CatalogServiceRepository) AddCatalogItem(item *pb.CatalogItem) error {
 		return err
 	}
 
-	// Check QuantityAvailable validity
-	if err := checkQuantityAvailableValidity(item.QuantityAvailable); err != nil {
-		return err
-	}
-
 	// Check Price validity
 	if err := checkPriceValidity(item.Price); err != nil {
 		return err
@@ -109,11 +104,6 @@ func (r *CatalogServiceRepository) UpdateQuantityAvailable(itemID string, quanti
 
 	// Check ItemID validity
 	if err := checkItemIDValidity(itemID); err != nil {
-		return err
-	}
-
-	// Check quantity validity
-	if err := checkQuantityAvailableValidity(quantity); err != nil {
 		return err
 	}
 
@@ -236,13 +226,6 @@ func checkItemIDUniqueness(itemID string, db *gorm.DB) error {
 func checkDescriptionValidity(description string) error {
 	if description == "" {
 		return errors.New("Description cannot be empty")
-	}
-	return nil
-}
-
-func checkQuantityAvailableValidity(quantity uint32) error {
-	if quantity < 0 {
-		return errors.New("Quantity available must be greater or equal than zero")
 	}
 	return nil
 }

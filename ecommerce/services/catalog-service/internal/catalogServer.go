@@ -28,12 +28,6 @@ func (s *CatalogServer) AddCatalogItem(ctx context.Context, req *pb.AddCatalogIt
 		}, status.Error(codes.InvalidArgument, "ItemId and Description must be provided and not empty")
 	}
 
-	if req.Item.QuantityAvailable < 0 {
-		return &pb.AddCatalogItemResponse{
-			ErrorMessage: "Quantity available must be greater or equal than zero",
-		}, status.Error(codes.InvalidArgument, "Quantity available must be greater or equal than zero")
-	}
-
 	if req.Item.Price < 0 {
 		return &pb.AddCatalogItemResponse{
 			ErrorMessage: "Price must be non-negative",
@@ -85,12 +79,6 @@ func (s *CatalogServer) UpdateQuantityAvailable(ctx context.Context, req *pb.Upd
 		return &pb.UpdateQuantityAvailableResponse{
 			ErrorMessage: "ItemId must be provided and not empty",
 		}, status.Error(codes.InvalidArgument, "ItemId must be provided and not empty")
-	}
-
-	if req.Quantity < 0 {
-		return &pb.UpdateQuantityAvailableResponse{
-			ErrorMessage: "Quantity must be greater or equal than zero",
-		}, status.Error(codes.InvalidArgument, "Quantity must be greater than zero")
 	}
 
 	if err := s.repo.UpdateQuantityAvailable(req.ItemId, req.Quantity); err != nil {

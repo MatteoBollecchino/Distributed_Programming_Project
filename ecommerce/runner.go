@@ -30,6 +30,7 @@ func main() {
 	cleanProtoFlag := flag.Bool("clean-proto", false, "Remove all generated protobuf files")
 	cleanDBFlag := flag.Bool("clean-db", false, "Remove all SQLite database files (.db)")
 	cleanFlag := flag.Bool("clean", false, "Remove all compiled service binaries")
+	testFlag := flag.Bool("test", false, "Run test suites for all microservices")
 	flag.Parse()
 
 	services := []Service{
@@ -59,6 +60,11 @@ func main() {
 
 	if *cleanFlag {
 		cleanBinaries(services)
+		return
+	}
+
+	if *testFlag {
+		runTests(services) // <-- Trigger test suite execution
 		return
 	}
 
@@ -140,6 +146,39 @@ func runService(ctx context.Context, svc Service) error {
 // -----------------------------------------------------------------------------
 // Utility Functions
 // -----------------------------------------------------------------------------
+
+// runTests executes tests inside each microservice folder sequentially
+func runTests(services []Service) {
+	fmt.Println("[ORCHESTRATOR] Running test suites for all services...")
+	allPassed := true
+
+	for _, svc := range services {
+		// Skip the Web Server because it doesn't contain back-end unit tests
+		if svc.Name == "WEB-SERVER" {
+			continue
+		}
+
+		fmt.Printf("[%s] Executing go test...\n", svc.Name)
+		cmd := exec.Command("go", "test", "./...")
+		cmd.Dir = svc.Dir
+
+		// Capture both standard output and error to display test logs clearly
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("[%s] Tests FAILED:\n%s\n", svc.Name, string(output))
+			allPassed = false
+		} else {
+			fmt.Printf("[%s]  Tests PASSED\n", svc.Name)
+		}
+		fmt.Println(strings.Repeat("-", 50))
+	}
+
+	if allPassed {
+		fmt.Println("[ORCHESTRATOR] All test suites completed successfully! ")
+	} else {
+		log.Fatalf("[ORCHESTRATOR] Some test suites failed. Please check the logs above.")
+	}
+}
 
 // generateProto recompiles the .proto files (requires 'protoc' installed on the host)
 func generateProto() {

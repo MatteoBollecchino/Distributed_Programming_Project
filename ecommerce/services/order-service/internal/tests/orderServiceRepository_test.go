@@ -3,9 +3,8 @@ package tests
 import (
 	"testing"
 
-	ulid "github.com/oklog/ulid/v2"
-	//"gorm.io/driver/sqlite"
 	"github.com/glebarez/sqlite"
+	ulid "github.com/oklog/ulid/v2"
 	"gorm.io/gorm"
 
 	pb "github.com/MatteoBollecchino/Distributed_Programming_Project/ecommerce/proto/order"
