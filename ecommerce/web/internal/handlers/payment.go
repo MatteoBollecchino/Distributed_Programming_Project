@@ -129,7 +129,7 @@ func (s *ServerDependencies) PaymentHandler(writer http.ResponseWriter, request 
 }
 
 func (s *ServerDependencies) ProcessPaymentHandler(writer http.ResponseWriter, request *http.Request) {
-	// Only Post requests are accepted
+	// Only POST requests are accepted
 	if request.Method != http.MethodPost {
 		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
 		return

@@ -102,7 +102,7 @@ func (s *WebServer) processPaymentHandler(writer http.ResponseWriter, request *h
 	s.dep.ProcessPaymentHandler(writer, request)
 }
 
-// AUTHETIFICATION PAGE HANDLERS ///////////////////////////////////////////////////////////////
+// AUTHENTIFICATION PAGE HANDLERS ///////////////////////////////////////////////////////////////
 
 func (s *WebServer) accountHandler(writer http.ResponseWriter, request *http.Request) {
 	s.dep.AccountHandler(writer, request)

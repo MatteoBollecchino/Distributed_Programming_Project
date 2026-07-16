@@ -64,7 +64,7 @@ func main() {
 	}
 
 	if *testFlag {
-		runTests(services) // <-- Trigger test suite execution
+		runTests(services)
 		return
 	}
 
@@ -72,9 +72,7 @@ func main() {
 	runAll(services)
 }
 
-// -----------------------------------------------------------------------------
-// Core Actions
-// -----------------------------------------------------------------------------
+// CORE ACTIONS ///////////////////////////////////////////////////////////////
 
 func runAll(services []Service) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -143,9 +141,7 @@ func runService(ctx context.Context, svc Service) error {
 	return cmd.Wait()
 }
 
-// -----------------------------------------------------------------------------
-// Utility Functions
-// -----------------------------------------------------------------------------
+// UTILITY FUNCTIONS ///////////////////////////////////////////////////////////////
 
 // runTests executes tests inside each microservice folder sequentially
 func runTests(services []Service) {
