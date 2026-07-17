@@ -1,121 +1,103 @@
-# Distributed_Programming_Project
+# FantaWorld: A Distributed E-Commerce Platform
 
-The idea underlying the Distributed Programming project is the development of an e-commerce
-platform dedicated to the sale of products related to the fantasy and science fiction world, such as
-books, manga, collectible items, etc.
-The main objective of the project is to design and implement a realistic distributed system capable
-of concretely applying the concepts covered during the course, including inter-process communication,
-concurrency management, separation of concerns, and architectural scalability.
+A robust, cross-platform distributed e-commerce platform built with **Go**, leveraging **gRPC** and **Protocol Buffers** for high-performance inter-service communication, and **SQLite** for lightweight, isolated data persistence.
+
+This project features a custom, native Go-based orchestrator (`runner.go`) that handles compilation, dependency management, concurrent execution, logging, and cleanup across Windows, macOS, and Linux.
+
+---
+
+## System Architecture & Port Mapping
+
+The platform is split into 5 decoupled microservices and a Web Server. For the system to initialize correctly, network ports **8080 to 8085 must be completely free** on the host machine.
+
+| Port | Service Name | Directory | Functional Description |
+| --- | --- | --- | --- |
+| **8080** | Web Server | `web/server` | User entry point. Serves the UI and routes HTTP/API requests. |
+| **8081** | Authentication | `services/auth-service` | Handles identity, secure registration, login. |
+| **8082** | Cart Service | `services/cart-service` | Manages active shopping cart states and items persistence. |
+| **8083** | Catalog Service | `services/catalog-service` | Serves product information, category management, and inventory. |
+| **8084** | Order Service | `services/order-service` | Orchestrates checkouts and records purchase history. |
+| **8085** | Payment Service | `services/payment-service` | Simulates payment gateway transactions and financial validation. |
+
+---
 
 ## Prerequisites
 
-- Go 1.21 or higher
-- protoc compiler
+Before running the project, ensure you have the following environment tools installed:
 
-## Makefile instructions 
+* **Go SDK (v1.22+ recommended):** To compile the services and run the orchestrator.
+* **Protocol Buffers Compiler (`protoc`):** Required only if you need to modify and regenerate the `.proto` API contracts, along with `protoc-gen-go` and `protoc-gen-go-grpc` plugins.
 
-make run-all        # Start
-make proto          # Compiles with protoc
-make clean-proto    # Removes files generated with protoc
-make build          # Build binary
-make test           # Run tests
-make clean          # Clean build artifacts
+---
 
-## Project Flow
+## Getting Started & Usage Guide
 
-Browser
-  ↓
-Web Server (HTML + sessions)
-  ↓ REST
-Auth / Catalog / Cart Service
-  ↓ gRPC
-Order Service ↔ Catalog Service
-  ↓
-Database (GORM)
+All orchestration workflows are controlled via the `runner.go` utility script located in the project root. You can pass specific flags to execute different maintenance or deployment tasks.
 
-# Request Flow
+### 1. Run the Entire Platform (Default)
 
-GET /catalog
-  ↓
-RequireAuth middleware
-  ↓
-CatalogHandler
-  ↓
-CatalogClient.ListProducts()
-  ↓
-Catalog Service
-  ↓
-ProductDTO[]
-  ↓
-ProductViewModel[]
-  ↓
-catalog.html
+To compile all microservices on-the-fly, launch them concurrently, and stream their unified logs into a single terminal window, simply run:
 
+```bash
+go run runner.go
 
-## Project Structure
+```
 
-METTERE LO SCHEMA CHE SI OTTIENE DAL COMANDO "tree -F ecommerce"
+To shut down all services safely and free up the allocated TCP ports, press `Ctrl + C`.
 
-ecommerce/
-├── services/
-│   ├── auth-service/
-│   ├── catalog-service/
-│   ├── cart-service/
-│   ├── order-service/
-│   └── payment-service/
-├── web/
-│   ├── templates/
-│   └── server/
-├── proto/
-│   ├── catalog.proto
-│   ├── order.proto
-│   └── cart.proto
-├── Makefile
-└── README.md
+### 2. Run Test Suites
 
-*-service/
-├── internal/
-│   ├── domain/
-│   │   ├── entity.go
-│   │   ├── interface.go
-|   | 
-│   ├── repository/
-│   │   └── product_repository.go
-│   └── tests/
-├── go.mod
-└── Makefile
+To recursively navigate into each microservice folder and run all isolated unit tests (`go test ./...`):
 
-web/
-├── cmd/
-│   └── server/
-│       └── main.go
-├── internal/
-│   ├── handlers/
-│   │   ├── auth.go
-│   │   ├── catalog.go
-│   │   ├── cart.go
-│   │   ├── order.go
-│   │   └── admin.go
-│   ├── clients/
-│   │   ├── auth_client.go
-│   │   ├── catalog_client.go
-│   │   ├── cart_client.go
-│   │   └── order_client.go
-│   ├── session/
-│   │   └── secure_cookie.go
-│   ├── middleware/
-│   │   ├── auth.go
-│   │   └── admin.go
-│   └── viewmodels/
-│       ├── product_vm.go
-│       └── order_vm.go
-├── templates/
-│   ├── login.html
-│   ├── catalog.html
-│   ├── cart.html
-│   └── orders.html
+```bash
+go run runner.go -test
+
+```
+
+### 3. Generate Protobuf/gRPC Files
+
+If you make changes to any `.proto` definition, you can recompile all API contracts automatically:
+
+```bash
+go run runner.go -proto
+
+```
+
+### 4. System Cleanups
+
+The orchestrator includes defensive routines to purge state or residual files:
+
+* **Clean database states** (Deletes all persistent SQLite `.db` files to completely reset the application):
+```bash
+go run runner.go -clean-db
+
+```
 
 
+* **Clean generated protobufs** (Removes all autogenerated `*.pb.go` and `*_grpc.pb.go` files):
+```bash
+go run runner.go -clean-proto
+
+```
 
 
+* **Clean binaries** (Forcefully removes any residual compiled executable files):
+```bash
+go run runner.go -clean
 
+```
+
+---
+
+## Verifying and Navigating the Application
+
+1. Fire up the platform using `go run runner.go`.
+2. Open any web browser of your choice.
+3. Navigate to the following local address:
+```http
+http://localhost:8080/welcome
+
+```
+
+
+4. From this landing page, you can either log in using one of the two pre-configured **Administrator accounts** (to update the catalog and inject new items) or **register a new Customer account** to simulate a full e-commerce shopping experience, from cart management to checkout and final order processing.
